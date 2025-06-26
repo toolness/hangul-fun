@@ -197,6 +197,33 @@ fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
     Some((initial_ch, medial_ch, maybe_final_ch))
 }
 
+fn hangul_syllable_to_jamos(ch: char) -> Option<String> {
+    if let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable(ch) {
+        if let Some(final_ch) = maybe_final_ch {
+            Some(format!("{initial_ch}{medial_ch}{final_ch}"))
+        } else {
+            Some(format!("{initial_ch}{medial_ch}"))
+        }
+    } else {
+        None
+    }
+}
+
+fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
+    let str = value.as_ref();
+    let mut result = String::with_capacity(str.len());
+
+    for ch in str.chars() {
+        if let Some(jamos) = hangul_syllable_to_jamos(ch) {
+            result.push_str(&jamos);
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
+}
+
 fn main() {
     if let Some(arg) = args().skip(1).next() {
         for ch in arg.chars() {
@@ -207,5 +234,7 @@ fn main() {
         for char in chars {
             print_char_info(char);
         }
+        let decomposed = decompose_all_hangul_syllables("밥을".to_owned());
+        println!("{decomposed} (length {})", decomposed.len());
     }
 }
