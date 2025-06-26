@@ -155,7 +155,7 @@ fn print_char_info(ch: char) {
     let class = get_char_class(ch);
     let codepoint = ch as u32;
     let start = format!("ch={ch} ({codepoint:#x}) {class:?}");
-    let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul(ch) else {
+    let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable(ch) else {
         println!("{start}");
         return;
     };
@@ -171,7 +171,7 @@ fn print_char_info(ch: char) {
     );
 }
 
-fn decompose_hangul(ch: char) -> Option<(char, char, Option<char>)> {
+fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
     let class = get_char_class(ch);
     let codepoint = ch as u32;
     if class != CharClass::HangulSyllables {
