@@ -1,5 +1,9 @@
 use std::env::args;
 
+use crate::romanize::romanize_decomposed_hangul;
+
+mod romanize;
+
 #[derive(Debug, PartialEq)]
 enum CharClass {
     HangulCompatibilityJamo,
@@ -24,130 +28,6 @@ fn get_char_class(ch: char) -> CharClass {
 impl From<char> for CharClass {
     fn from(value: char) -> Self {
         get_char_class(value)
-    }
-}
-
-fn get_final_no_next_vowel(ch: char) -> Option<&'static str> {
-    match ch {
-        // Final
-        'ᆨ' => Some("k"),
-        'ᆩ' => Some("k"),
-        'ᆪ' => Some("?"),
-        'ᆫ' => Some("n"),
-        'ᆬ' => Some("?"),
-        'ᆭ' => Some("?"),
-        'ᆮ' => Some("t"),
-        'ᆯ' => Some("l"),
-        'ᆰ' => Some("?"),
-        'ᆱ' => Some("?"),
-        'ᆲ' => Some("?"),
-        'ᆳ' => Some("?"),
-        'ᆴ' => Some("?"),
-        'ᆵ' => Some("?"),
-        'ᆶ' => Some("?"),
-        'ᆷ' => Some("m"),
-        'ᆸ' => Some("p"),
-        'ᆹ' => Some("?"),
-        'ᆺ' => Some("t"),
-        'ᆻ' => Some("t"),
-        'ᆼ' => Some("ng"),
-        'ᆽ' => Some("t"),
-        'ᆾ' => Some("t"),
-        'ᆿ' => Some("k"),
-        'ᇀ' => Some("t"),
-        'ᇁ' => Some("p"),
-        'ᇂ' => Some("t"),
-        _ => None,
-    }
-}
-
-fn get_final_next_vowel(ch: char) -> Option<&'static str> {
-    match ch {
-        // Final
-        'ᆨ' => Some("g"),
-        'ᆩ' => Some("kk"),
-        'ᆪ' => Some("?"),
-        'ᆫ' => Some("n"),
-        'ᆬ' => Some("?"),
-        'ᆭ' => Some("?"),
-        'ᆮ' => Some("d"),
-        'ᆯ' => Some("l"),
-        'ᆰ' => Some("?"),
-        'ᆱ' => Some("?"),
-        'ᆲ' => Some("?"),
-        'ᆳ' => Some("?"),
-        'ᆴ' => Some("?"),
-        'ᆵ' => Some("?"),
-        'ᆶ' => Some("?"),
-        'ᆷ' => Some("m"),
-        'ᆸ' => Some("b"),
-        'ᆹ' => Some("?"),
-        'ᆺ' => Some("s"),
-        'ᆻ' => Some("ss"),
-        'ᆼ' => Some("ng"),
-        'ᆽ' => Some("j"),
-        'ᆾ' => Some("ch"),
-        'ᆿ' => Some("k"),
-        'ᇀ' => Some("t"),
-        'ᇁ' => Some("p"),
-        'ᇂ' => Some("h"),
-        _ => None,
-    }
-}
-
-fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
-    match ch {
-        // Initial
-        'ᄀ' => Some("g"),
-        'ᄁ' => Some("kk"),
-        'ᄂ' => Some("n"),
-        'ᄃ' => Some("d"),
-        'ᄄ' => Some("tt"),
-        'ᄅ' => Some("r"),
-        'ᄆ' => Some("m"),
-        'ᄇ' => Some("b"),
-        'ᄈ' => Some("pp"),
-        'ᄉ' => Some("s"),
-        'ᄊ' => Some("ss"),
-        'ᄋ' => Some(""), // silent
-        'ᄌ' => Some("j"),
-        'ᄍ' => Some("jj"),
-        'ᄎ' => Some("ch"),
-        'ᄏ' => Some("k"),
-        'ᄐ' => Some("t"),
-        'ᄑ' => Some("p"),
-        'ᄒ' => Some("h"),
-
-        // Medial
-        'ᅡ' => Some("a"),
-        'ᅢ' => Some("ae"),
-        'ᅣ' => Some("ya"),
-        'ᅤ' => Some("yae"),
-        'ᅥ' => Some("eo"),
-        'ᅦ' => Some("e"),
-        'ᅧ' => Some("yeo"),
-        'ᅨ' => Some("ye"),
-        'ᅩ' => Some("o"),
-        'ᅪ' => Some("wa"),
-        'ᅫ' => Some("wae"),
-        'ᅬ' => Some("oe"),
-        'ᅭ' => Some("yo"),
-        'ᅮ' => Some("u"),
-        'ᅯ' => Some("wo"),
-        'ᅰ' => Some("we"),
-        'ᅱ' => Some("wi"),
-        'ᅲ' => Some("yu"),
-        'ᅳ' => Some("eu"),
-        'ᅴ' => Some("ui"),
-        'ᅵ' => Some("i"),
-
-        _ => {
-            if is_next_vowel {
-                get_final_next_vowel(ch)
-            } else {
-                get_final_no_next_vowel(ch)
-            }
-        }
     }
 }
 
@@ -234,7 +114,13 @@ fn main() {
         for char in chars {
             print_char_info(char);
         }
-        let decomposed = decompose_all_hangul_syllables("밥을".to_owned());
-        println!("{decomposed} (length {})", decomposed.len());
+        let example = "밥을".to_owned();
+        let decomposed = decompose_all_hangul_syllables(&example);
+        println!(
+            "{decomposed} (original length={}, decomposed length={})",
+            example.len(),
+            decomposed.len()
+        );
+        println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
     }
 }
