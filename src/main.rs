@@ -140,7 +140,7 @@ fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
         'ᅳ' => Some("eu"),
         'ᅴ' => Some("ui"),
         'ᅵ' => Some("i"),
-        
+
         _ => {
             if is_next_vowel {
                 get_final_next_vowel(ch)
@@ -151,13 +151,31 @@ fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
     }
 }
 
-fn decompose_hangul(ch: char) {
+fn print_char_info(ch: char) {
     let class = get_char_class(ch);
     let codepoint = ch as u32;
     let start = format!("ch={ch} ({codepoint:#x}) {class:?}");
-    if class != CharClass::HangulSyllables {
+    let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul(ch) else {
         println!("{start}");
         return;
+    };
+    let final_info = if let Some(final_ch) = maybe_final_ch {
+        format!(" final={final_ch} ({:#x})", final_ch as u32)
+    } else {
+        String::default()
+    };
+    let initial_codepoint = initial_ch as u32;
+    let medial_codepoint = medial_ch as u32;
+    println!(
+        "{start} initial={initial_ch} ({initial_codepoint:#x}) medial={medial_ch} ({medial_codepoint:#x}){final_info}"
+    );
+}
+
+fn decompose_hangul(ch: char) -> Option<(char, char, Option<char>)> {
+    let class = get_char_class(ch);
+    let codepoint = ch as u32;
+    if class != CharClass::HangulSyllables {
+        return None;
     }
     let base_codepoint = codepoint - 0xac00;
     let initial_codepoint_idx = base_codepoint / 588;
@@ -176,25 +194,18 @@ fn decompose_hangul(ch: char) {
     };
     assert_eq!(CharClass::from(initial_ch), CharClass::HangulJamo);
     assert_eq!(CharClass::from(medial_ch), CharClass::HangulJamo);
-    let final_info = if let Some(final_ch) = maybe_final_ch {
-        format!(" final={final_ch} ({final_codepoint:#x})")
-    } else {
-        String::default()
-    };
-    println!(
-        "{start} initial={initial_ch} ({initial_codepoint:#x}) medial={medial_ch} ({medial_codepoint:#x}){final_info}"
-    );
+    Some((initial_ch, medial_ch, maybe_final_ch))
 }
 
 fn main() {
     if let Some(arg) = args().skip(1).next() {
         for ch in arg.chars() {
-            decompose_hangul(ch);
+            print_char_info(ch);
         }
     } else {
         let chars = vec!['한', '가', '꿈'];
         for char in chars {
-            decompose_hangul(char);
+            print_char_info(char);
         }
     }
 }
