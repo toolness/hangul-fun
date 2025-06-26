@@ -105,22 +105,15 @@ fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 }
 
 fn main() {
-    if let Some(arg) = args().skip(1).next() {
-        for ch in arg.chars() {
-            print_char_info(ch);
-        }
-    } else {
-        let chars = vec!['한', '가', '꿈'];
-        for char in chars {
-            print_char_info(char);
-        }
-        let example = "밥을".to_owned();
-        let decomposed = decompose_all_hangul_syllables(&example);
-        println!(
-            "{decomposed} (original length={}, decomposed length={})",
-            example.len(),
-            decomposed.len()
-        );
-        println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
+    let str = args().skip(1).next().unwrap_or("밥을".to_owned());
+    for ch in str.chars() {
+        print_char_info(ch);
     }
+    let decomposed = decompose_all_hangul_syllables(&str);
+    println!(
+        "{decomposed} (original length={}, decomposed length={})",
+        str.len(),
+        decomposed.len()
+    );
+    println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
 }
