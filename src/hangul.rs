@@ -1,21 +1,21 @@
 #[derive(Debug, PartialEq)]
 pub enum HangulCharClass {
-    HangulCompatibilityJamo,
-    HangulJamoExtendedA,
-    HangulJamoExtendedB,
-    HangulJamo,
-    HangulSyllables,
-    Other,
+    CompatibilityJamo,
+    JamoExtendedA,
+    JamoExtendedB,
+    Jamo,
+    Syllables,
+    None,
 }
 
 pub fn get_hangul_char_class(ch: char) -> HangulCharClass {
     match ch {
-        '\u{ac00}'..='\u{d7af}' => HangulCharClass::HangulSyllables,
-        '\u{1100}'..='\u{11ff}' => HangulCharClass::HangulJamo,
-        '\u{3130}'..='\u{318f}' => HangulCharClass::HangulCompatibilityJamo,
-        '\u{a960}'..='\u{a97f}' => HangulCharClass::HangulJamoExtendedA,
-        '\u{d7b0}'..='\u{d7ff}' => HangulCharClass::HangulJamoExtendedB,
-        _ => HangulCharClass::Other,
+        '\u{ac00}'..='\u{d7af}' => HangulCharClass::Syllables,
+        '\u{1100}'..='\u{11ff}' => HangulCharClass::Jamo,
+        '\u{3130}'..='\u{318f}' => HangulCharClass::CompatibilityJamo,
+        '\u{a960}'..='\u{a97f}' => HangulCharClass::JamoExtendedA,
+        '\u{d7b0}'..='\u{d7ff}' => HangulCharClass::JamoExtendedB,
+        _ => HangulCharClass::None,
     }
 }
 
@@ -33,7 +33,7 @@ impl From<char> for HangulCharClass {
 pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
     let class = get_hangul_char_class(ch);
     let codepoint = ch as u32;
-    if class != HangulCharClass::HangulSyllables {
+    if class != HangulCharClass::Syllables {
         return None;
     }
     let base_codepoint = codepoint - 0xac00;
@@ -51,8 +51,8 @@ pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)>
     } else {
         char::from_u32(final_codepoint)
     };
-    assert_eq!(HangulCharClass::from(initial_ch), HangulCharClass::HangulJamo);
-    assert_eq!(HangulCharClass::from(medial_ch), HangulCharClass::HangulJamo);
+    assert_eq!(HangulCharClass::from(initial_ch), HangulCharClass::Jamo);
+    assert_eq!(HangulCharClass::from(medial_ch), HangulCharClass::Jamo);
     Some((initial_ch, medial_ch, maybe_final_ch))
 }
 
