@@ -62,7 +62,7 @@ fn main() {
             }
             let decomposed = decompose_all_hangul_syllables(&string);
             println!(
-                "{decomposed} (original length={}, decomposed length={})",
+                "decomposed: {decomposed} (original length={}, decomposed length={})",
                 string.len(),
                 decomposed.len()
             );
