@@ -25,6 +25,11 @@ impl From<char> for HangulCharClass {
     }
 }
 
+/// Decomposes the given Hangul syllable into its
+/// composite Hangul jamos.
+/// 
+/// If the character is not a Hangul syllable, returns
+/// None.
 pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
     let class = get_hangul_char_class(ch);
     let codepoint = ch as u32;
@@ -63,6 +68,8 @@ fn hangul_syllable_to_jamos(ch: char) -> Option<String> {
     }
 }
 
+/// Converts any Hangul syllables in the given string into
+/// Hangul jamos.
 pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
     let str = value.as_ref();
     let mut result = String::with_capacity(str.len());

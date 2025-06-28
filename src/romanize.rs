@@ -1,4 +1,5 @@
-fn get_final_no_next_vowel(ch: char) -> Option<&'static str> {
+/// Get the romanization of a final consonant, when there is no vowel following it.
+fn get_final_with_no_next_vowel(ch: char) -> Option<&'static str> {
     match ch {
         // Final
         'ᆨ' => Some("k"),
@@ -21,7 +22,8 @@ fn get_final_no_next_vowel(ch: char) -> Option<&'static str> {
     }
 }
 
-fn get_final_next_vowel(ch: char) -> Option<&'static str> {
+/// Get the romanization of a final consonant, when there is a vowel following it.
+fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
     match ch {
         // Final
         'ᆨ' => Some("g"),
@@ -44,6 +46,11 @@ fn get_final_next_vowel(ch: char) -> Option<&'static str> {
     }
 }
 
+/// Get the romanization of a Hangul syllable.
+/// 
+/// `is_next_vowel` represents whether the syllable
+/// following the final consonant of this syllable is
+/// a vowel.
 fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
     match ch {
         // Initial
@@ -92,14 +99,17 @@ fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
 
         _ => {
             if is_next_vowel {
-                get_final_next_vowel(ch)
+                get_final_with_next_vowel(ch)
             } else {
-                get_final_no_next_vowel(ch)
+                get_final_with_no_next_vowel(ch)
             }
         }
     }
 }
 
+/// Romanizes the given sequence of Hangul jamos.
+/// 
+/// (These should _not_ be Hangul syllables!)
 pub fn romanize_decomposed_hangul<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
     let mut prev_char: Option<char> = None;
