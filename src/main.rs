@@ -1,8 +1,11 @@
-use std::{fs::File, io::BufReader, time::Duration};
 use clap::{Parser, Subcommand};
 use rodio::{Decoder, OutputStream, Source};
+use std::{fs::File, io::BufReader, time::Duration};
 
-use crate::{hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class}, romanize::romanize_decomposed_hangul};
+use crate::{
+    hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class},
+    romanize::romanize_decomposed_hangul,
+};
 
 mod hangul;
 mod romanize;

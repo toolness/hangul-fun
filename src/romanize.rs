@@ -47,7 +47,7 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
 }
 
 /// Get the romanization of a Hangul syllable.
-/// 
+///
 /// `is_next_vowel` represents whether the syllable
 /// following the final consonant of this syllable is
 /// a vowel.
@@ -108,7 +108,7 @@ fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
 }
 
 /// Romanizes the given sequence of Hangul jamos.
-/// 
+///
 /// (These should _not_ be Hangul syllables!)
 pub fn romanize_decomposed_hangul<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());

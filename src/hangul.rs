@@ -27,7 +27,7 @@ impl From<char> for HangulCharClass {
 
 /// Decomposes the given Hangul syllable into its
 /// composite Hangul jamos.
-/// 
+///
 /// If the character is not a Hangul syllable, returns
 /// None.
 pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
@@ -87,13 +87,19 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class, HangulCharClass};
+    use crate::hangul::{
+        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable,
+        get_hangul_char_class,
+    };
 
     #[test]
     fn test_char_class_works() {
         assert_eq!(get_hangul_char_class('이'), HangulCharClass::Syllables);
         assert_eq!(get_hangul_char_class('ᆸ'), HangulCharClass::Jamo);
-        assert_eq!(get_hangul_char_class('ㄱ'), HangulCharClass::CompatibilityJamo);
+        assert_eq!(
+            get_hangul_char_class('ㄱ'),
+            HangulCharClass::CompatibilityJamo
+        );
     }
 
     #[test]
