@@ -1,8 +1,34 @@
-use std::env::args;
+use std::{fs::File, io::BufReader, time::Duration};
+
+use rodio::{Decoder, OutputStream, Source};
 
 use crate::romanize::romanize_decomposed_hangul;
 
 mod romanize;
+
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = "hangul-fun")]
+#[command(about = "A program to help one analyze and learn Hangul", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Decode a string
+    Decode {
+        /// The string to decode
+        string: String,
+    },
+    /// Play a file
+    Play {
+        /// The filename to play
+        filename: String,
+    },
+}
 
 #[derive(Debug, PartialEq)]
 enum CharClass {
@@ -105,15 +131,28 @@ fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 }
 
 fn main() {
-    let str = args().skip(1).next().unwrap_or("밥을".to_owned());
-    for ch in str.chars() {
-        print_char_info(ch);
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Commands::Decode { string } => {
+            for ch in string.chars() {
+                print_char_info(ch);
+            }
+            let decomposed = decompose_all_hangul_syllables(&string);
+            println!(
+                "{decomposed} (original length={}, decomposed length={})",
+                string.len(),
+                decomposed.len()
+            );
+            println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
+        }
+        Commands::Play { filename } => {
+            let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+            let file = BufReader::new(File::open(filename).unwrap());
+            let mut source = Decoder::new(file).unwrap();
+            source.try_seek(Duration::from_secs_f32(0.0)).unwrap();
+            stream_handle.play_raw(source.convert_samples()).unwrap();
+            std::thread::sleep(Duration::from_secs(10));
+        }
     }
-    let decomposed = decompose_all_hangul_syllables(&str);
-    println!(
-        "{decomposed} (original length={}, decomposed length={})",
-        str.len(),
-        decomposed.len()
-    );
-    println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
 }
