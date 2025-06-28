@@ -126,3 +126,15 @@ pub fn romanize_decomposed_hangul<T: AsRef<str>>(value: T) -> String {
     }
     result
 }
+
+#[cfg(test)]
+mod test {
+    use crate::romanize::romanize_decomposed_hangul;
+
+    #[test]
+    fn test_romanize_works() {
+        assert_eq!(romanize_decomposed_hangul("밥"), "bap".to_owned());
+        // Liason/linking converts the 'p' to a 'b'.
+        assert_eq!(romanize_decomposed_hangul("밥을"), "babeul".to_owned());
+    }
+}

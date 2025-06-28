@@ -84,3 +84,31 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 
     result
 }
+
+#[cfg(test)]
+mod test {
+    use crate::hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class, HangulCharClass};
+
+    #[test]
+    fn test_char_class_works() {
+        assert_eq!(get_hangul_char_class('이'), HangulCharClass::Syllables);
+        assert_eq!(get_hangul_char_class('ᆸ'), HangulCharClass::Jamo);
+        assert_eq!(get_hangul_char_class('ㄱ'), HangulCharClass::CompatibilityJamo);
+    }
+
+    #[test]
+    fn test_decompose_works() {
+        assert_eq!(decompose_hangul_syllable('h'), None);
+        assert_eq!(decompose_hangul_syllable('이'), Some(('ᄋ', 'ᅵ', None)));
+        assert_eq!(decompose_hangul_syllable('는'), Some(('ᄂ', 'ᅳ', Some('ᆫ'))));
+    }
+
+    #[test]
+    fn test_decompose_all_works() {
+        let orig = "이";
+        assert_eq!(orig.chars().count(), 1);
+        let decomposed = "이";
+        assert_eq!(decomposed.chars().count(), 2);
+        assert_eq!(decompose_all_hangul_syllables(&orig), decomposed.to_owned());
+    }
+}
