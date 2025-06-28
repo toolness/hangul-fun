@@ -137,4 +137,9 @@ mod test {
         // Liason/linking converts the 'p' to a 'b'.
         assert_eq!(romanize_decomposed_hangul("밥을"), "babeul".to_owned());
     }
+
+    #[test]
+    fn test_non_hangul_is_unchanged() {
+        assert_eq!(romanize_decomposed_hangul("hi"), "hi".to_owned());
+    }
 }
