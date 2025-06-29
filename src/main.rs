@@ -29,6 +29,9 @@ enum Commands {
     Play {
         /// The filename to play
         filename: String,
+        /// Disable alternate screen mode
+        #[arg(long = "no-alt", default_value_t = false)]
+        no_alt: bool,
     },
 }
 
@@ -68,8 +71,8 @@ fn main() -> Result<()> {
             );
             println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
         }
-        Commands::Play { filename } => {
-            play::play(filename)?;
+        Commands::Play { filename, no_alt } => {
+            play::play(filename, !no_alt)?;
         }
     }
     Ok(())

@@ -259,7 +259,7 @@ fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
         .collect()
 }
 
-pub fn play(filename: &String) -> Result<()> {
+pub fn play(filename: &String, use_alternate_screen: bool) -> Result<()> {
     let lrc_filename = Path::new(filename).with_extension("lrc");
     if !lrc_filename.exists() {
         return Err(anyhow!(
@@ -286,10 +286,16 @@ pub fn play(filename: &String) -> Result<()> {
         curr_word: 0,
         curr_syllable: 0,
     };
-    execute!(stdout(), EnterAlternateScreen, Hide, DisableLineWrap)?;
+    if use_alternate_screen {
+        execute!(stdout(), EnterAlternateScreen)?;
+    }
+    execute!(stdout(), Hide, DisableLineWrap)?;
     enable_raw_mode()?;
     let result = app.run();
     disable_raw_mode()?;
-    execute!(stdout(), EnableLineWrap, Show, LeaveAlternateScreen)?;
+    execute!(stdout(), EnableLineWrap, Show)?;
+    if use_alternate_screen {
+        execute!(stdout(), LeaveAlternateScreen)?;
+    }
     result
 }
