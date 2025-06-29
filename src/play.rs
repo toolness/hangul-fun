@@ -44,6 +44,10 @@ impl App {
                 self.go_to_next_line();
             } else if event == Event::Key(KeyCode::Up.into()) {
                 self.go_to_prev_line();
+            } else if event == Event::Key(KeyCode::Left.into()) {
+                self.select_prev_syllable();
+            } else if event == Event::Key(KeyCode::Right.into()) {
+                self.select_next_syllable();
             } else if event == Event::Key(KeyCode::Enter.into()) {
                 self.seek_to_current_lyric()?;
             } else if event == Event::Key(KeyCode::Char('b').into()) {
@@ -115,6 +119,8 @@ impl App {
     pub fn go_to_next_line(&mut self) {
         if self.curr_lyrics_line + 1 < self.lyrics.len() {
             self.curr_lyrics_line += 1;
+            self.curr_word = 0;
+            self.curr_syllable = 0;
             if self.first_lyrics_line + self.lyrics_lines_to_show <= self.curr_lyrics_line {
                 self.first_lyrics_line += 1;
             }
@@ -124,8 +130,47 @@ impl App {
     pub fn go_to_prev_line(&mut self) {
         if self.curr_lyrics_line > 0 {
             self.curr_lyrics_line -= 1;
+            self.curr_word = 0;
+            self.curr_syllable = 0;
             if self.first_lyrics_line > self.curr_lyrics_line {
                 self.first_lyrics_line = self.curr_lyrics_line;
+            }
+        }
+    }
+
+    fn get_curr_line_word_lengths(&self) -> Vec<usize> {
+        HangulCharClass::split(&self.lyrics[self.curr_lyrics_line].1)
+            .into_iter()
+            .filter_map(|(class, str)| {
+                if class != HangulCharClass::Syllables {
+                    None
+                } else {
+                    Some(str.chars().count())
+                }
+            })
+            .collect()
+    }
+
+    fn select_next_syllable(&mut self) {
+        let word_lengths = self.get_curr_line_word_lengths();
+        if let Some(&num_syllables) = word_lengths.get(self.curr_word) {
+            if self.curr_syllable + 1 < num_syllables {
+                self.curr_syllable += 1;
+            } else if self.curr_word + 1 < word_lengths.len() {
+                self.curr_word += 1;
+                self.curr_syllable = 0;
+            }
+        }
+    }
+
+    fn select_prev_syllable(&mut self) {
+        let word_lengths = self.get_curr_line_word_lengths();
+        if let Some(_) = word_lengths.get(self.curr_word) {
+            if self.curr_syllable > 0 {
+                self.curr_syllable -= 1;
+            } else if self.curr_word > 0 {
+                self.curr_word -= 1;
+                self.curr_syllable = word_lengths[self.curr_word] - 1;
             }
         }
     }
