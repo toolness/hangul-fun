@@ -40,6 +40,8 @@ impl App {
                 self.go_to_next_line();
             } else if event == Event::Key(KeyCode::Up.into()) {
                 self.go_to_prev_line();
+            } else if event == Event::Key(KeyCode::Enter.into()) {
+                self.seek_to_current_lyric();
             }
         }
 
@@ -97,6 +99,16 @@ impl App {
             self.sink.pause();
         }
     }
+
+    fn seek_to_current_lyric(&self) -> Result<()> {
+        if let Some((pos, _)) = self.lyrics.get(self.curr_lyrics_line) {
+            if let Err(err) = self.sink.try_seek(pos.clone()) {
+                return Err(anyhow!("Failed to seek: {err}"));
+            }
+            self.sink.play();
+        }
+        Ok(())
+    }
 }
 
 fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
@@ -139,7 +151,7 @@ pub fn play(filename: &String) -> Result<()> {
     let file = BufReader::new(File::open(filename)?);
     let source = Decoder::new(file)?;
     sink.append(source);
-    sink.try_seek(Duration::from_secs_f32(0.0)).unwrap();
+    sink.pause();
     let mut app = App {
         lyrics,
         sink,
