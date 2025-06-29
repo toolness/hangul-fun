@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use crossterm::{
     QueueableCommand,
     cursor::{Hide, MoveTo, MoveToNextLine, Show},
-    event::{Event, KeyCode, KeyEvent, KeyModifiers, read},
+    event::{Event, KeyCode, KeyEvent, KeyModifiers, poll, read},
     execute,
     style::{Color, Print, PrintStyledContent, Stylize},
     terminal::{
@@ -38,7 +38,18 @@ impl App {
     pub fn run(&mut self) -> Result<()> {
         loop {
             self.render()?;
-            let event = read()?;
+            let event = if self.sink.is_paused() {
+                read()?
+            } else {
+                // We're playing music, and parts of our UI
+                // depend on the playback state, so don't wait
+                // forever for an event before we force a
+                // re-render.
+                if !poll(Duration::from_millis(100))? {
+                    continue;
+                }
+                read()?
+            };
             if event == key(KeyCode::Esc) {
                 break;
             } else if event == key(KeyCode::Char(' ')) {
@@ -82,6 +93,19 @@ impl App {
         None
     }
 
+    fn get_playback_line_idx(&self) -> Option<usize> {
+        let sink_pos = self.sink.get_pos();
+        let mut latest_idx = None;
+        for (idx, (pos, _)) in self.lyrics.iter().enumerate() {
+            if pos <= &sink_pos {
+                latest_idx = Some(idx);
+            } else {
+                return latest_idx;
+            }
+        }
+        None
+    }
+
     pub fn render(&self) -> Result<()> {
         let mut stdout = stdout();
         stdout.queue(Clear(ClearType::All))?;
@@ -96,6 +120,11 @@ impl App {
     fn render_lyrics(&self, stdout: &mut Stdout) -> Result<()> {
         let lyrics = &self.lyrics;
         let mut i = self.first_lyrics_line;
+        let playback_line_idx = if self.sink.is_paused() {
+            None
+        } else {
+            self.get_playback_line_idx()
+        };
         loop {
             let Some((_, line)) = lyrics.get(i) else {
                 break;
@@ -125,7 +154,11 @@ impl App {
                     }
                 }
             } else {
-                stdout.queue(Print("  "))?;
+                if Some(i) == playback_line_idx {
+                    stdout.queue(PrintStyledContent("> ".with(Color::Grey)))?;
+                } else {
+                    stdout.queue(Print("  "))?;
+                }
                 stdout.queue(Print(&line))?;
             }
             stdout.queue(MoveToNextLine(1))?;
