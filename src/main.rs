@@ -1,13 +1,5 @@
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
-use lrc::Lyrics;
-use rodio::{Decoder, OutputStream, Source};
-use std::{
-    fs::{File, read_to_string},
-    io::BufReader,
-    path::Path,
-    time::Duration,
-};
 
 use crate::{
     hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class},
@@ -15,6 +7,7 @@ use crate::{
 };
 
 mod hangul;
+mod play;
 mod romanize;
 
 #[derive(Parser)]
@@ -76,24 +69,7 @@ fn main() -> Result<()> {
             println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
         }
         Commands::Play { filename } => {
-            let lrc_filename = Path::new(filename).with_extension("lrc");
-            if !lrc_filename.exists() {
-                return Err(anyhow!(
-                    "LRC file does not exist: {}",
-                    lrc_filename.to_string_lossy()
-                ));
-            }
-            let lyrics = Lyrics::from_str(read_to_string(lrc_filename)?)?;
-            for (time_tag, line) in lyrics.get_timed_lines() {
-                let millis = time_tag.get_timestamp();
-                println!("{time_tag} {millis} {line}");
-            }
-            let (_stream, stream_handle) = OutputStream::try_default()?;
-            let file = BufReader::new(File::open(filename)?);
-            let mut source = Decoder::new(file)?;
-            source.try_seek(Duration::from_secs_f32(0.0)).unwrap();
-            stream_handle.play_raw(source.convert_samples())?;
-            std::thread::sleep(Duration::from_secs(10));
+            play::play(filename)?;
         }
     }
     Ok(())
