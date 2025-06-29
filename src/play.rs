@@ -6,8 +6,8 @@ use crossterm::{
     execute,
     style::Print,
     terminal::{
-        Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
-        enable_raw_mode, size,
+        Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
+        LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
     },
 };
 use lrc::Lyrics;
@@ -143,11 +143,11 @@ pub fn play(filename: &String) -> Result<()> {
         first_lyrics_line: 0,
         curr_lyrics_line: 0,
     };
-    execute!(stdout(), EnterAlternateScreen, Hide)?;
+    execute!(stdout(), EnterAlternateScreen, Hide, DisableLineWrap)?;
     enable_raw_mode()?;
     let result = app.run();
     disable_raw_mode()?;
-    execute!(stdout(), Show, LeaveAlternateScreen)?;
+    execute!(stdout(), EnableLineWrap, Show, LeaveAlternateScreen)?;
     if let Err(err) = &result {
         eprintln!("{}", err);
     }
