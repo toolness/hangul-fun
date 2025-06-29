@@ -130,6 +130,10 @@ pub fn play(filename: &String) -> Result<()> {
         let millis = time_tag.get_timestamp();
         println!("{time_tag} {millis} {line}");
     }
+    let lyrics = lyrics_to_vec(lyrics);
+    if lyrics.is_empty() {
+        return Err(anyhow!("LRC file contains no lyrics!"));
+    }
     let (_stream, stream_handle) = OutputStream::try_default()?;
     let sink = Sink::try_new(&stream_handle)?;
     let file = BufReader::new(File::open(filename)?);
@@ -137,7 +141,7 @@ pub fn play(filename: &String) -> Result<()> {
     sink.append(source);
     sink.try_seek(Duration::from_secs_f32(0.0)).unwrap();
     let mut app = App {
-        lyrics: lyrics_to_vec(lyrics),
+        lyrics,
         sink,
         lyrics_lines_to_show: size()?.1 as usize / 2,
         first_lyrics_line: 0,
@@ -148,8 +152,5 @@ pub fn play(filename: &String) -> Result<()> {
     let result = app.run();
     disable_raw_mode()?;
     execute!(stdout(), EnableLineWrap, Show, LeaveAlternateScreen)?;
-    if let Err(err) = &result {
-        eprintln!("{}", err);
-    }
     result
 }
