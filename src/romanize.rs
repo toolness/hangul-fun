@@ -1,25 +1,41 @@
+/// Used for any jamos we don't know how to pronounce/romanize.
+///
+/// We should get rid of these but I don't actually know how to
+/// pronounce/romanize them!
+///
+/// Claude says these are archaic and no longer used, but they're
+/// definitely present in LRC files, and they're also highlighted
+/// in green on this page, indicating that they are modern-usage
+/// characters:
+///
+///     https://en.wikipedia.org/wiki/Hangul#Unicode
+///
+/// However, none of the Hangul tutorials actually have anything
+/// to say about them.
+const UNKNOWN: &'static str = "?";
+
 /// Get the romanization of a final consonant, when there is no vowel following it.
 fn get_final_with_no_next_vowel(ch: char) -> Option<&'static str> {
     match ch {
         // Final
         'ᆨ' => Some("k"),
         'ᆩ' => Some("k"),
-        'ᆪ' => Some("?"),
+        'ᆪ' => Some(UNKNOWN),
         'ᆫ' => Some("n"),
-        'ᆬ' => Some("?"),
-        'ᆭ' => Some("?"),
+        'ᆬ' => Some(UNKNOWN),
+        'ᆭ' => Some(UNKNOWN),
         'ᆮ' => Some("t"),
         'ᆯ' => Some("l"),
-        'ᆰ' => Some("?"),
-        'ᆱ' => Some("?"),
-        'ᆲ' => Some("?"),
-        'ᆳ' => Some("?"),
-        'ᆴ' => Some("?"),
-        'ᆵ' => Some("?"),
-        'ᆶ' => Some("?"),
+        'ᆰ' => Some(UNKNOWN),
+        'ᆱ' => Some(UNKNOWN),
+        'ᆲ' => Some(UNKNOWN),
+        'ᆳ' => Some(UNKNOWN),
+        'ᆴ' => Some(UNKNOWN),
+        'ᆵ' => Some(UNKNOWN),
+        'ᆶ' => Some(UNKNOWN),
         'ᆷ' => Some("m"),
         'ᆸ' => Some("p"),
-        'ᆹ' => Some("?"),
+        'ᆹ' => Some(UNKNOWN),
         'ᆺ' => Some("t"),
         'ᆻ' => Some("t"),
         'ᆼ' => Some("ng"),
@@ -39,22 +55,22 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
         // Final
         'ᆨ' => Some("g"),
         'ᆩ' => Some("kk"),
-        'ᆪ' => Some("?"),
+        'ᆪ' => Some(UNKNOWN),
         'ᆫ' => Some("n"),
-        'ᆬ' => Some("?"),
-        'ᆭ' => Some("?"),
+        'ᆬ' => Some(UNKNOWN),
+        'ᆭ' => Some(UNKNOWN),
         'ᆮ' => Some("d"),
         'ᆯ' => Some("l"),
-        'ᆰ' => Some("?"),
-        'ᆱ' => Some("?"),
-        'ᆲ' => Some("?"),
-        'ᆳ' => Some("?"),
-        'ᆴ' => Some("?"),
-        'ᆵ' => Some("?"),
-        'ᆶ' => Some("?"),
+        'ᆰ' => Some(UNKNOWN),
+        'ᆱ' => Some(UNKNOWN),
+        'ᆲ' => Some(UNKNOWN),
+        'ᆳ' => Some(UNKNOWN),
+        'ᆴ' => Some(UNKNOWN),
+        'ᆵ' => Some(UNKNOWN),
+        'ᆶ' => Some(UNKNOWN),
         'ᆷ' => Some("m"),
         'ᆸ' => Some("b"),
-        'ᆹ' => Some("?"),
+        'ᆹ' => Some(UNKNOWN),
         'ᆺ' => Some("s"),
         'ᆻ' => Some("ss"),
         'ᆼ' => Some("ng"),
