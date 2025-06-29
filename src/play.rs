@@ -41,7 +41,7 @@ impl App {
             } else if event == Event::Key(KeyCode::Up.into()) {
                 self.go_to_prev_line();
             } else if event == Event::Key(KeyCode::Enter.into()) {
-                self.seek_to_current_lyric();
+                self.seek_to_current_lyric()?;
             }
         }
 
