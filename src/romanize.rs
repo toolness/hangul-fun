@@ -68,12 +68,12 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
     }
 }
 
-/// Get the romanization of a Hangul syllable.
+/// Get the romanization of a Hangul jamo.
 ///
 /// `is_next_vowel` represents whether the syllable
 /// following the final consonant of this syllable is
 /// a vowel.
-fn get_romanized(ch: char, is_next_vowel: bool) -> Option<&'static str> {
+pub fn get_romanized_jamo(ch: char, is_next_vowel: bool) -> Option<&'static str> {
     match ch {
         // Initial
         'ᄀ' => Some("g"),
@@ -138,7 +138,7 @@ pub fn romanize_decomposed_hangul<T: AsRef<str>>(value: T) -> String {
     for char in value.as_ref().chars().chain(" ".chars()) {
         if let Some(prev_char) = prev_char {
             let is_next_vowel = char == 'ᄋ';
-            if let Some(romanized) = get_romanized(prev_char, is_next_vowel) {
+            if let Some(romanized) = get_romanized_jamo(prev_char, is_next_vowel) {
                 result.push_str(romanized);
             } else {
                 result.push(prev_char);

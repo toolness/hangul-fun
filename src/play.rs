@@ -20,8 +20,8 @@ use std::{
 };
 
 use crate::{
-    hangul::{HangulCharClass, decompose_all_hangul_syllables},
-    romanize::romanize_decomposed_hangul,
+    hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
+    romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
 
 struct App {
@@ -117,9 +117,35 @@ impl App {
             let decomposed = decompose_all_hangul_syllables(selected_word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(romanized))?;
+            stdout.queue(MoveToNextLine(1))?;
         }
-        if let Some(_selected_syllable) = selected_syllable {
-            // TODO: Print syllable info.
+        if let Some(selected_syllable) = selected_syllable {
+            stdout.queue(Print(format!("Selected syllable: {selected_syllable}")))?;
+            if let Some((initial_ch, medial_ch, maybe_final_ch)) =
+                decompose_hangul_syllable(selected_syllable)
+            {
+                let mut initial_rom = get_romanized_jamo(initial_ch, false).unwrap_or("?");
+                if initial_rom == "" {
+                    initial_rom = "silent";
+                }
+                let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
+                stdout.queue(Print(format!(
+                    " Initial: {initial_ch} ({initial_rom}) Medial: {medial_ch} ({medial_rom}) ",
+                )))?;
+                if let Some(final_ch) = maybe_final_ch {
+                    let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
+                    let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
+                    if final_rom_no_vowel == final_rom_vowel {
+                        stdout
+                            .queue(Print(format!(" Final: {final_ch} ({final_rom_no_vowel})")))?;
+                    } else {
+                        stdout.queue(Print(format!(
+                            " Final: {final_ch} ({final_rom_no_vowel}/{final_rom_vowel})"
+                        )))?;
+                    }
+                }
+                stdout.queue(MoveToNextLine(1))?;
+            }
         }
         stdout.flush()?;
         Ok(())
