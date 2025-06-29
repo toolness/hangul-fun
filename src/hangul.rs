@@ -22,7 +22,6 @@ impl From<char> for HangulCharClass {
 }
 
 impl HangulCharClass {
-    #[cfg(test)]
     pub fn split(value: &str) -> Vec<(HangulCharClass, &str)> {
         let mut result = vec![];
         let mut pos: Option<(usize, HangulCharClass)> = None;

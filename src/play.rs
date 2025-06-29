@@ -4,7 +4,7 @@ use crossterm::{
     cursor::{Hide, MoveTo, MoveToNextLine, Show},
     event::{Event, KeyCode, read},
     execute,
-    style::Print,
+    style::{Color, Print, PrintStyledContent, Stylize},
     terminal::{
         Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
         LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
@@ -19,10 +19,14 @@ use std::{
     time::Duration,
 };
 
+use crate::hangul::HangulCharClass;
+
 struct App {
     lyrics_lines_to_show: usize,
     first_lyrics_line: usize,
     curr_lyrics_line: usize,
+    curr_word: usize,
+    curr_syllable: usize,
     lyrics: Vec<(Duration, String)>,
     sink: Sink,
 }
@@ -55,22 +59,54 @@ impl App {
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
         let lyrics = &self.lyrics;
+        let mut selected_word = None;
+        let mut selected_syllable = None;
         let mut i = self.first_lyrics_line;
         loop {
             let Some((_, line)) = lyrics.get(i) else {
                 break;
             };
-            stdout.queue(Print(if i == self.curr_lyrics_line {
-                "> "
+            if i == self.curr_lyrics_line {
+                stdout.queue(Print("> "))?;
+                let mut word_idx = 0;
+                for (class, str) in HangulCharClass::split(&line) {
+                    if class == HangulCharClass::Syllables {
+                        if word_idx == self.curr_word {
+                            selected_word = Some(str);
+                            let mut syllable_idx = 0;
+                            for (idx, char) in str.char_indices() {
+                                let syllable = (&str[idx..idx + char.len_utf8()]).on(Color::Grey);
+                                if syllable_idx == self.curr_syllable {
+                                    selected_syllable = Some(char);
+                                    stdout.queue(PrintStyledContent(syllable.with(Color::Blue)))?;
+                                } else {
+                                    stdout.queue(PrintStyledContent(syllable))?;
+                                }
+                                syllable_idx += 1;
+                            }
+                        } else {
+                            stdout.queue(Print(str))?;
+                        }
+                        word_idx += 1;
+                    } else {
+                        stdout.queue(Print(str))?;
+                    }
+                }
             } else {
-                "  "
-            }))?;
-            stdout.queue(Print(&line))?;
+                stdout.queue(Print("  "))?;
+                stdout.queue(Print(&line))?;
+            }
             stdout.queue(MoveToNextLine(1))?;
             i += 1;
             if i >= self.first_lyrics_line + self.lyrics_lines_to_show {
                 break;
             }
+        }
+        if let Some(_selected_word) = selected_word {
+            // TODO: Print word romanization.
+        }
+        if let Some(_selected_syllable) = selected_syllable {
+            // TODO: Print syllable info.
         }
         stdout.flush()?;
         Ok(())
@@ -165,6 +201,8 @@ pub fn play(filename: &String) -> Result<()> {
         lyrics_lines_to_show: size()?.1 as usize / 2,
         first_lyrics_line: 0,
         curr_lyrics_line: 0,
+        curr_word: 0,
+        curr_syllable: 0,
     };
     execute!(stdout(), EnterAlternateScreen, Hide, DisableLineWrap)?;
     enable_raw_mode()?;
