@@ -8,20 +8,16 @@ pub enum HangulCharClass {
     None,
 }
 
-pub fn get_hangul_char_class(ch: char) -> HangulCharClass {
-    match ch {
-        '\u{ac00}'..='\u{d7af}' => HangulCharClass::Syllables,
-        '\u{1100}'..='\u{11ff}' => HangulCharClass::Jamo,
-        '\u{3130}'..='\u{318f}' => HangulCharClass::CompatibilityJamo,
-        '\u{a960}'..='\u{a97f}' => HangulCharClass::JamoExtendedA,
-        '\u{d7b0}'..='\u{d7ff}' => HangulCharClass::JamoExtendedB,
-        _ => HangulCharClass::None,
-    }
-}
-
 impl From<char> for HangulCharClass {
     fn from(value: char) -> Self {
-        get_hangul_char_class(value)
+        match value {
+            '\u{ac00}'..='\u{d7af}' => HangulCharClass::Syllables,
+            '\u{1100}'..='\u{11ff}' => HangulCharClass::Jamo,
+            '\u{3130}'..='\u{318f}' => HangulCharClass::CompatibilityJamo,
+            '\u{a960}'..='\u{a97f}' => HangulCharClass::JamoExtendedA,
+            '\u{d7b0}'..='\u{d7ff}' => HangulCharClass::JamoExtendedB,
+            _ => HangulCharClass::None,
+        }
     }
 }
 
@@ -31,7 +27,7 @@ impl From<char> for HangulCharClass {
 /// If the character is not a Hangul syllable, returns
 /// None.
 pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
-    let class = get_hangul_char_class(ch);
+    let class = HangulCharClass::from(ch);
     let codepoint = ch as u32;
     if class != HangulCharClass::Syllables {
         return None;
@@ -89,15 +85,14 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 mod test {
     use crate::hangul::{
         HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable,
-        get_hangul_char_class,
     };
 
     #[test]
     fn test_char_class_works() {
-        assert_eq!(get_hangul_char_class('이'), HangulCharClass::Syllables);
-        assert_eq!(get_hangul_char_class('ᆸ'), HangulCharClass::Jamo);
+        assert_eq!(HangulCharClass::from('이'), HangulCharClass::Syllables);
+        assert_eq!(HangulCharClass::from('ᆸ'), HangulCharClass::Jamo);
         assert_eq!(
-            get_hangul_char_class('ㄱ'),
+            HangulCharClass::from('ㄱ'),
             HangulCharClass::CompatibilityJamo
         );
     }

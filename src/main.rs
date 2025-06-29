@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use crate::{
-    hangul::{decompose_all_hangul_syllables, decompose_hangul_syllable, get_hangul_char_class},
+    hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
     romanize::romanize_decomposed_hangul,
 };
 
@@ -33,7 +33,7 @@ enum Commands {
 }
 
 fn print_char_info(ch: char) {
-    let class = get_hangul_char_class(ch);
+    let class = HangulCharClass::from(ch);
     let codepoint = ch as u32;
     let start = format!("ch={ch} ({codepoint:#x}) {class:?}");
     let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable(ch) else {
