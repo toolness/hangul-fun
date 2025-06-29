@@ -19,7 +19,10 @@ use std::{
     time::Duration,
 };
 
-use crate::hangul::HangulCharClass;
+use crate::{
+    hangul::{HangulCharClass, decompose_all_hangul_syllables},
+    romanize::romanize_decomposed_hangul,
+};
 
 struct App {
     lyrics_lines_to_show: usize,
@@ -106,8 +109,14 @@ impl App {
                 break;
             }
         }
-        if let Some(_selected_word) = selected_word {
-            // TODO: Print word romanization.
+        stdout.queue(MoveToNextLine(3))?;
+        if let Some(selected_word) = selected_word {
+            stdout.queue(Print("Selected word: "))?;
+            stdout.queue(Print(selected_word))?;
+            stdout.queue(Print(" Romanization: "))?;
+            let decomposed = decompose_all_hangul_syllables(selected_word);
+            let romanized = romanize_decomposed_hangul(&decomposed);
+            stdout.queue(Print(romanized))?;
         }
         if let Some(_selected_syllable) = selected_syllable {
             // TODO: Print syllable info.
