@@ -87,7 +87,7 @@ impl App {
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
         self.render_lyrics(&mut stdout)?;
-        stdout.queue(MoveToNextLine(3))?;
+        stdout.queue(MoveToNextLine(2))?;
         self.render_selection_info(&mut stdout)?;
         stdout.flush()?;
         Ok(())
