@@ -113,14 +113,14 @@ impl App {
         if let Some(selected_word) = selected_word {
             stdout.queue(Print("Selected word: "))?;
             stdout.queue(Print(selected_word))?;
-            stdout.queue(Print(" Romanization: "))?;
             let decomposed = decompose_all_hangul_syllables(selected_word);
             let romanized = romanize_decomposed_hangul(&decomposed);
-            stdout.queue(Print(romanized))?;
+            stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(MoveToNextLine(1))?;
         }
         if let Some(selected_syllable) = selected_syllable {
             stdout.queue(Print(format!("Selected syllable: {selected_syllable}")))?;
+            stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
                 decompose_hangul_syllable(selected_syllable)
             {
@@ -129,22 +129,24 @@ impl App {
                     initial_rom = "silent";
                 }
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
-                stdout.queue(Print(format!(
-                    " Initial: {initial_ch} ({initial_rom}) Medial: {medial_ch} ({medial_rom}) ",
-                )))?;
+                stdout.queue(Print(format!("  Initial: {initial_ch} ({initial_rom})")))?;
+                stdout.queue(MoveToNextLine(1))?;
+                stdout.queue(Print(format!("  Medial : {medial_ch}   ({medial_rom})")))?;
+                stdout.queue(MoveToNextLine(1))?;
                 if let Some(final_ch) = maybe_final_ch {
                     let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
                     let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
                     if final_rom_no_vowel == final_rom_vowel {
-                        stdout
-                            .queue(Print(format!(" Final: {final_ch} ({final_rom_no_vowel})")))?;
+                        stdout.queue(Print(format!(
+                            "  Final  : {final_ch}   ({final_rom_no_vowel})"
+                        )))?;
                     } else {
                         stdout.queue(Print(format!(
-                            " Final: {final_ch} ({final_rom_no_vowel}/{final_rom_vowel})"
+                            "  Final  : {final_ch}   ({final_rom_no_vowel}/{final_rom_vowel})"
                         )))?;
                     }
+                    stdout.queue(MoveToNextLine(1))?;
                 }
-                stdout.queue(MoveToNextLine(1))?;
             }
         }
         stdout.flush()?;
