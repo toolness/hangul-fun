@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use crossterm::{
     QueueableCommand,
     cursor::{Hide, MoveTo, MoveToNextLine, Show},
-    event::{Event, KeyCode, read},
+    event::{Event, KeyCode, KeyEvent, KeyModifiers, read},
     execute,
     style::{Color, Print, PrintStyledContent, Stylize},
     terminal::{
@@ -39,21 +39,21 @@ impl App {
         loop {
             self.render()?;
             let event = read()?;
-            if event == Event::Key(KeyCode::Esc.into()) {
+            if event == key(KeyCode::Esc) {
                 break;
-            } else if event == Event::Key(KeyCode::Char(' ').into()) {
+            } else if event == key(KeyCode::Char(' ')) {
                 self.toggle_pause();
-            } else if event == Event::Key(KeyCode::Down.into()) {
+            } else if event == key(KeyCode::Down) || event == key_ctrl(KeyCode::Char('n')) {
                 self.go_to_next_line();
-            } else if event == Event::Key(KeyCode::Up.into()) {
+            } else if event == key(KeyCode::Up) || event == key_ctrl(KeyCode::Char('p')) {
                 self.go_to_prev_line();
-            } else if event == Event::Key(KeyCode::Left.into()) {
+            } else if event == key(KeyCode::Left) || event == key_ctrl(KeyCode::Char('b')) {
                 self.select_prev_syllable();
-            } else if event == Event::Key(KeyCode::Right.into()) {
+            } else if event == key(KeyCode::Right) || event == key_ctrl(KeyCode::Char('f')) {
                 self.select_next_syllable();
-            } else if event == Event::Key(KeyCode::Enter.into()) {
+            } else if event == key(KeyCode::Enter) {
                 self.seek_to_current_lyric()?;
-            } else if event == Event::Key(KeyCode::Char('b').into()) {
+            } else if event == key(KeyCode::Char('b')) {
                 self.seek_backward()?;
             }
         }
@@ -265,6 +265,14 @@ impl App {
         let curr_pos = self.sink.get_pos();
         self.seek_to(curr_pos.saturating_sub(Duration::from_secs(2)))
     }
+}
+
+fn key(code: KeyCode) -> Event {
+    Event::Key(code.into())
+}
+
+fn key_ctrl(code: KeyCode) -> Event {
+    Event::Key(KeyEvent::new(code, KeyModifiers::CONTROL))
 }
 
 fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
