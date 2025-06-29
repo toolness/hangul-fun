@@ -14,7 +14,7 @@ use lrc::Lyrics;
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
     fs::{File, read_to_string},
-    io::{BufReader, Write, stdout},
+    io::{BufReader, Stdout, Write, stdout},
     path::Path,
     time::Duration,
 };
@@ -61,13 +61,40 @@ impl App {
         Ok(())
     }
 
+    fn get_selection(&self) -> Option<(&str, char, &str)> {
+        if let Some((_, line)) = self.lyrics.get(self.curr_lyrics_line) {
+            let mut word_idx = 0;
+            for (class, word) in HangulCharClass::split(&line) {
+                if class == HangulCharClass::Syllables {
+                    if word_idx == self.curr_word {
+                        let mut syllable_idx = 0;
+                        for (idx, char) in word.char_indices() {
+                            if syllable_idx == self.curr_syllable {
+                                return Some((word, char, &word[idx..idx + char.len_utf8()]));
+                            }
+                            syllable_idx += 1;
+                        }
+                    }
+                    word_idx += 1;
+                }
+            }
+        }
+        None
+    }
+
     pub fn render(&self) -> Result<()> {
         let mut stdout = stdout();
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
+        self.render_lyrics(&mut stdout)?;
+        stdout.queue(MoveToNextLine(3))?;
+        self.render_selection_info(&mut stdout)?;
+        stdout.flush()?;
+        Ok(())
+    }
+
+    fn render_lyrics(&self, stdout: &mut Stdout) -> Result<()> {
         let lyrics = &self.lyrics;
-        let mut selected_word = None;
-        let mut selected_syllable = None;
         let mut i = self.first_lyrics_line;
         loop {
             let Some((_, line)) = lyrics.get(i) else {
@@ -79,12 +106,10 @@ impl App {
                 for (class, str) in HangulCharClass::split(&line) {
                     if class == HangulCharClass::Syllables {
                         if word_idx == self.curr_word {
-                            selected_word = Some(str);
                             let mut syllable_idx = 0;
                             for (idx, char) in str.char_indices() {
                                 let syllable = (&str[idx..idx + char.len_utf8()]).on(Color::Grey);
                                 if syllable_idx == self.curr_syllable {
-                                    selected_syllable = Some(char);
                                     stdout.queue(PrintStyledContent(syllable.with(Color::Blue)))?;
                                 } else {
                                     stdout.queue(PrintStyledContent(syllable))?;
@@ -109,16 +134,18 @@ impl App {
                 break;
             }
         }
-        stdout.queue(MoveToNextLine(3))?;
-        if let Some(selected_word) = selected_word {
+        Ok(())
+    }
+
+    fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
+        if let Some((selected_word, selected_syllable, _)) = self.get_selection() {
             stdout.queue(Print("Selected word: "))?;
             stdout.queue(Print(selected_word))?;
             let decomposed = decompose_all_hangul_syllables(selected_word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(MoveToNextLine(1))?;
-        }
-        if let Some(selected_syllable) = selected_syllable {
+
             stdout.queue(Print(format!("Selected syllable: {selected_syllable}")))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
@@ -149,7 +176,6 @@ impl App {
                 }
             }
         }
-        stdout.flush()?;
         Ok(())
     }
 
