@@ -48,7 +48,6 @@ impl App {
 
     pub fn render(&self) -> Result<()> {
         let mut stdout = stdout();
-        let width = size()?.0;
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
         let lyrics = self.lyrics.get_timed_lines();
