@@ -42,6 +42,8 @@ impl App {
                 self.go_to_prev_line();
             } else if event == Event::Key(KeyCode::Enter.into()) {
                 self.seek_to_current_lyric()?;
+            } else if event == Event::Key(KeyCode::Char('b').into()) {
+                self.seek_backward()?;
             }
         }
 
@@ -100,14 +102,24 @@ impl App {
         }
     }
 
+    fn seek_to(&self, pos: Duration) -> Result<()> {
+        if let Err(err) = self.sink.try_seek(pos.clone()) {
+            return Err(anyhow!("Failed to seek: {err}"));
+        }
+        self.sink.play();
+        Ok(())
+    }
+
     fn seek_to_current_lyric(&self) -> Result<()> {
         if let Some((pos, _)) = self.lyrics.get(self.curr_lyrics_line) {
-            if let Err(err) = self.sink.try_seek(pos.clone()) {
-                return Err(anyhow!("Failed to seek: {err}"));
-            }
-            self.sink.play();
+            self.seek_to(pos.clone())?;
         }
         Ok(())
+    }
+
+    fn seek_backward(&self) -> Result<()> {
+        let curr_pos = self.sink.get_pos();
+        self.seek_to(curr_pos.saturating_sub(Duration::from_secs(2)))
     }
 }
 
