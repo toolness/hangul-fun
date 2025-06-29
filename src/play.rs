@@ -149,12 +149,7 @@ pub fn play(filename: &String) -> Result<()> {
             lrc_filename.to_string_lossy()
         ));
     }
-    let lyrics = Lyrics::from_str(read_to_string(lrc_filename)?)?;
-    for (time_tag, line) in lyrics.get_timed_lines() {
-        let millis = time_tag.get_timestamp();
-        println!("{time_tag} {millis} {line}");
-    }
-    let lyrics = lyrics_to_vec(lyrics);
+    let lyrics = lyrics_to_vec(Lyrics::from_str(read_to_string(lrc_filename)?)?);
     if lyrics.is_empty() {
         return Err(anyhow!("LRC file contains no lyrics!"));
     }
