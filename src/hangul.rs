@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum HangulCharClass {
     CompatibilityJamo,
     JamoExtendedA,
@@ -18,6 +18,28 @@ impl From<char> for HangulCharClass {
             '\u{d7b0}'..='\u{d7ff}' => HangulCharClass::JamoExtendedB,
             _ => HangulCharClass::None,
         }
+    }
+}
+
+impl HangulCharClass {
+    #[cfg(test)]
+    pub fn split(value: &str) -> Vec<(HangulCharClass, &str)> {
+        let mut result = vec![];
+        let mut pos: Option<(usize, HangulCharClass)> = None;
+        for (curr_idx, char) in value.char_indices() {
+            if let Some((start_idx, class)) = pos {
+                if HangulCharClass::from(char) != class {
+                    result.push((class, &value[start_idx..curr_idx]));
+                    pos = Some((curr_idx, HangulCharClass::from(char)));
+                }
+            } else {
+                pos = Some((curr_idx, HangulCharClass::from(char)));
+            }
+        }
+        if let Some((start_idx, class)) = pos {
+            result.push((class, &value[start_idx..]));
+        }
+        result
     }
 }
 
@@ -111,5 +133,23 @@ mod test {
         let decomposed = "이";
         assert_eq!(decomposed.chars().count(), 2);
         assert_eq!(decompose_all_hangul_syllables(&orig), decomposed.to_owned());
+    }
+
+    #[test]
+    fn test_split_works() {
+        assert_eq!(HangulCharClass::split(""), vec![]);
+        assert_eq!(
+            HangulCharClass::split("이"),
+            vec![(HangulCharClass::Syllables, "이")]
+        );
+
+        assert_eq!(
+            HangulCharClass::split("hi 이 there"),
+            vec![
+                (HangulCharClass::None, "hi "),
+                (HangulCharClass::Syllables, "이"),
+                (HangulCharClass::None, " there")
+            ]
+        );
     }
 }
