@@ -23,7 +23,7 @@ struct App {
     lyrics_lines_to_show: usize,
     first_lyrics_line: usize,
     curr_lyrics_line: usize,
-    lyrics: Lyrics,
+    lyrics: Vec<(Duration, String)>,
     sink: Sink,
 }
 
@@ -50,7 +50,7 @@ impl App {
         let mut stdout = stdout();
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
-        let lyrics = self.lyrics.get_timed_lines();
+        let lyrics = &self.lyrics;
         let mut i = self.first_lyrics_line;
         loop {
             let Some((_, line)) = lyrics.get(i) else {
@@ -73,7 +73,7 @@ impl App {
     }
 
     pub fn go_to_next_line(&mut self) {
-        if self.curr_lyrics_line + 1 < self.lyrics.get_timed_lines().len() {
+        if self.curr_lyrics_line + 1 < self.lyrics.len() {
             self.curr_lyrics_line += 1;
             if self.first_lyrics_line + self.lyrics_lines_to_show <= self.curr_lyrics_line {
                 self.first_lyrics_line += 1;
@@ -99,6 +99,24 @@ impl App {
     }
 }
 
+fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
+    lyrics
+        .get_timed_lines()
+        .iter()
+        .filter_map(|(time_tag, line)| {
+            let trimmed_line = line.trim();
+            if trimmed_line.len() == 0 {
+                None
+            } else {
+                Some((
+                    Duration::from_millis(time_tag.get_timestamp() as u64),
+                    trimmed_line.to_owned(),
+                ))
+            }
+        })
+        .collect()
+}
+
 pub fn play(filename: &String) -> Result<()> {
     let lrc_filename = Path::new(filename).with_extension("lrc");
     if !lrc_filename.exists() {
@@ -118,15 +136,15 @@ pub fn play(filename: &String) -> Result<()> {
     let source = Decoder::new(file)?;
     sink.append(source);
     sink.try_seek(Duration::from_secs_f32(0.0)).unwrap();
-    execute!(stdout(), EnterAlternateScreen, Hide)?;
-    enable_raw_mode()?;
     let mut app = App {
-        lyrics,
+        lyrics: lyrics_to_vec(lyrics),
         sink,
         lyrics_lines_to_show: size()?.1 as usize / 2,
         first_lyrics_line: 0,
         curr_lyrics_line: 0,
     };
+    execute!(stdout(), EnterAlternateScreen, Hide)?;
+    enable_raw_mode()?;
     let result = app.run();
     disable_raw_mode()?;
     execute!(stdout(), Show, LeaveAlternateScreen)?;
