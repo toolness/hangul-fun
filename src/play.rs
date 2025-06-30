@@ -146,6 +146,14 @@ impl App {
         stdout.queue(SetBackgroundColor(Color::Black))?;
         stdout.queue(Clear(ClearType::CurrentLine))?;
         stdout.queue(Print(" HANGUL-FUN"))?;
+        let playback_icon = if self.sink.is_paused() {
+            "⏸︎"
+        } else {
+            "⏵︎"
+        };
+        let columns = size()?.0;
+        stdout.queue(MoveToColumn(columns - 2))?;
+        stdout.queue(Print(playback_icon))?;
         stdout.queue(ResetColor)?;
         stdout.queue(MoveToNextLine(1))?;
         Ok(())
