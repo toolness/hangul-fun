@@ -141,19 +141,22 @@ impl App {
         Ok(())
     }
 
+    fn playback_icon(&self) -> &'static str {
+        if self.sink.is_paused() {
+            "⏸︎"
+        } else {
+            "⏵︎"
+        }
+    }
+
     fn render_status_bar(&self, stdout: &mut Stdout) -> Result<()> {
         stdout.queue(SetForegroundColor(Color::White))?;
         stdout.queue(SetBackgroundColor(Color::Black))?;
         stdout.queue(Clear(ClearType::CurrentLine))?;
         stdout.queue(Print(" HANGUL-FUN"))?;
-        let playback_icon = if self.sink.is_paused() {
-            "⏸︎"
-        } else {
-            "⏵︎"
-        };
         let columns = size()?.0;
         stdout.queue(MoveToColumn(columns - 2))?;
-        stdout.queue(Print(playback_icon))?;
+        stdout.queue(Print(self.playback_icon()))?;
         stdout.queue(ResetColor)?;
         stdout.queue(MoveToNextLine(1))?;
         Ok(())
@@ -162,11 +165,7 @@ impl App {
     fn render_lyrics(&self, stdout: &mut Stdout) -> Result<()> {
         let lyrics = &self.lyrics;
         let mut i = self.first_lyrics_line;
-        let playback_line_idx = if self.sink.is_paused() {
-            None
-        } else {
-            self.get_playback_line_idx()
-        };
+        let playback_line_idx = self.get_playback_line_idx();
         loop {
             let Some((_, line)) = lyrics.get(i) else {
                 break;
@@ -197,7 +196,8 @@ impl App {
                 }
             } else {
                 if Some(i) == playback_line_idx {
-                    stdout.queue(PrintStyledContent("> ".with(Color::Grey)))?;
+                    stdout.queue(PrintStyledContent(self.playback_icon().with(Color::Grey)))?;
+                    stdout.queue(Print(" "))?;
                 } else {
                     stdout.queue(Print("  "))?;
                 }
