@@ -237,10 +237,10 @@ impl App {
         let height = (HELP_LINES.len() as f32 / 2.0).ceil() as usize;
         for i in 0..height {
             let first_col = HELP_LINES[i];
-            stdout.queue(Print(first_col))?;
+            stdout.queue(PrintStyledContent(first_col.with(Color::DarkGrey)))?;
             if let Some(&second_col) = HELP_LINES.get(height + i) {
                 stdout.queue(MoveToColumn(col_2))?;
-                stdout.queue(Print(second_col))?;
+                stdout.queue(PrintStyledContent(second_col.with(Color::DarkGrey)))?;
             }
             stdout.queue(MoveToNextLine(1))?;
         }
