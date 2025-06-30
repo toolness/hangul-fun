@@ -28,12 +28,14 @@ use crate::{
 /// hotkey. If you change this, be sure to change `HELP_LINES`!
 const REWIND_SECS: u64 = 2;
 
-const HELP_LINES: [&'static str; 6] = [
+const NUM_HELP_LINES: usize = 6;
+
+const HELP_LINES: [&'static str; NUM_HELP_LINES] = [
     "↑/↓   - prev/next lines",
     "←/→   - prev/next syllable",
     "Enter - play current line",
     "Space - pause/unpause",
-    "b     - rewind 2 seconds",
+    "B     - rewind 2 seconds",
     "Esc   - quit",
 ];
 
@@ -129,7 +131,7 @@ impl App {
         self.render_lyrics(&mut stdout)?;
         stdout.queue(MoveToNextLine(1))?;
         self.render_selection_info(&mut stdout)?;
-        stdout.queue(MoveToNextLine(1))?;
+        stdout.queue(MoveTo(0, size()?.1 - help_lines_two_column_height() as u16))?;
         self.render_help(&mut stdout)?;
         stdout.flush()?;
         Ok(())
@@ -234,7 +236,7 @@ impl App {
 
     fn render_help(&self, stdout: &mut Stdout) -> Result<()> {
         let col_2 = size()?.0 / 2;
-        let height = (HELP_LINES.len() as f32 / 2.0).ceil() as usize;
+        let height = help_lines_two_column_height();
         for i in 0..height {
             let first_col = HELP_LINES[i];
             stdout.queue(PrintStyledContent(first_col.with(Color::DarkGrey)))?;
@@ -341,6 +343,10 @@ fn key(code: KeyCode) -> Event {
 
 fn key_ctrl(code: KeyCode) -> Event {
     Event::Key(KeyEvent::new(code, KeyModifiers::CONTROL))
+}
+
+fn help_lines_two_column_height() -> usize {
+    (HELP_LINES.len() as f32 / 2.0).ceil() as usize
 }
 
 fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
