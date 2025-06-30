@@ -205,7 +205,10 @@ impl App {
     }
 
     fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
-        if let Some((selected_word, selected_syllable, _)) = self.get_selection() {
+        stdout.queue(SetForegroundColor(Color::Black))?;
+        stdout.queue(SetBackgroundColor(Color::Grey))?;
+        if let Some((selected_word, selected_syllable, syllable_str)) = self.get_selection() {
+            stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(Print("Selected word: "))?;
             stdout.queue(Print(selected_word))?;
             let decomposed = decompose_all_hangul_syllables(selected_word);
@@ -213,7 +216,9 @@ impl App {
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(MoveToNextLine(1))?;
 
-            stdout.queue(Print(format!("Selected syllable: {selected_syllable}")))?;
+            stdout.queue(Clear(ClearType::CurrentLine))?;
+            stdout.queue(Print(format!("Selected syllable: ")))?;
+            stdout.queue(PrintStyledContent(syllable_str.with(Color::Blue)))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
                 decompose_hangul_syllable(selected_syllable)
@@ -223,11 +228,14 @@ impl App {
                     initial_rom = "silent";
                 }
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
+                stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!("  Initial: {initial_ch} ({initial_rom})")))?;
                 stdout.queue(MoveToNextLine(1))?;
+                stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!("  Medial : {medial_ch}   ({medial_rom})")))?;
                 stdout.queue(MoveToNextLine(1))?;
                 if let Some(final_ch) = maybe_final_ch {
+                    stdout.queue(Clear(ClearType::CurrentLine))?;
                     let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
                     let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
                     if final_rom_no_vowel == final_rom_vowel {
@@ -239,12 +247,11 @@ impl App {
                             "  Final  : {final_ch}   ({final_rom_no_vowel}/{final_rom_vowel})"
                         )))?;
                     }
+                    stdout.queue(MoveToNextLine(1))?;
                 }
-                stdout.queue(MoveToNextLine(1))?;
             }
-        } else {
-            stdout.queue(MoveToNextLine(5))?;
         }
+        stdout.queue(ResetColor)?;
         Ok(())
     }
 
