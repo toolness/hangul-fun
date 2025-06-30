@@ -1,7 +1,7 @@
 use anyhow::{Result, anyhow};
 use crossterm::{
     QueueableCommand,
-    cursor::{Hide, MoveTo, MoveToNextLine, Show},
+    cursor::{Hide, MoveTo, MoveToColumn, MoveToNextLine, Show},
     event::{Event, KeyCode, KeyEvent, KeyModifiers, poll, read},
     execute,
     style::{Color, Print, PrintStyledContent, Stylize},
@@ -23,6 +23,19 @@ use crate::{
     hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
     romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
+
+/// Amount to rewind, in seconds, when user presses the
+/// hotkey. If you change this, be sure to change `HELP_LINES`!
+const REWIND_SECS: u64 = 2;
+
+const HELP_LINES: [&'static str; 6] = [
+    "↑/↓   - prev/next lines",
+    "←/→   - prev/next syllable",
+    "Enter - play current line",
+    "Space - pause/unpause",
+    "b     - rewind 2 seconds",
+    "Esc   - quit",
+];
 
 struct App {
     lyrics_lines_to_show: usize,
@@ -50,6 +63,9 @@ impl App {
                 }
                 read()?
             };
+
+            // If these lines are changed, be sure to change
+            // `HELP_LINES` too.
             if event == key(KeyCode::Esc) {
                 break;
             } else if event == key(KeyCode::Char(' ')) {
@@ -111,8 +127,10 @@ impl App {
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
         self.render_lyrics(&mut stdout)?;
-        stdout.queue(MoveToNextLine(2))?;
+        stdout.queue(MoveToNextLine(1))?;
         self.render_selection_info(&mut stdout)?;
+        stdout.queue(MoveToNextLine(1))?;
+        self.render_help(&mut stdout)?;
         stdout.flush()?;
         Ok(())
     }
@@ -205,9 +223,26 @@ impl App {
                             "  Final  : {final_ch}   ({final_rom_no_vowel}/{final_rom_vowel})"
                         )))?;
                     }
-                    stdout.queue(MoveToNextLine(1))?;
                 }
+                stdout.queue(MoveToNextLine(1))?;
             }
+        } else {
+            stdout.queue(MoveToNextLine(5))?;
+        }
+        Ok(())
+    }
+
+    fn render_help(&self, stdout: &mut Stdout) -> Result<()> {
+        let col_2 = size()?.0 / 2;
+        let height = (HELP_LINES.len() as f32 / 2.0).ceil() as usize;
+        for i in 0..height {
+            let first_col = HELP_LINES[i];
+            stdout.queue(Print(first_col))?;
+            if let Some(&second_col) = HELP_LINES.get(height + i) {
+                stdout.queue(MoveToColumn(col_2))?;
+                stdout.queue(Print(second_col))?;
+            }
+            stdout.queue(MoveToNextLine(1))?;
         }
         Ok(())
     }
@@ -296,7 +331,7 @@ impl App {
 
     fn seek_backward(&self) -> Result<()> {
         let curr_pos = self.sink.get_pos();
-        self.seek_to(curr_pos.saturating_sub(Duration::from_secs(2)))
+        self.seek_to(curr_pos.saturating_sub(Duration::from_secs(REWIND_SECS)))
     }
 }
 
