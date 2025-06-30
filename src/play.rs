@@ -4,7 +4,10 @@ use crossterm::{
     cursor::{Hide, MoveTo, MoveToColumn, MoveToNextLine, Show},
     event::{Event, KeyCode, KeyEvent, KeyModifiers, poll, read},
     execute,
-    style::{Color, Print, PrintStyledContent, Stylize},
+    style::{
+        Color, Print, PrintStyledContent, ResetColor, SetBackgroundColor, SetForegroundColor,
+        Stylize,
+    },
     terminal::{
         Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
         LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
@@ -128,12 +131,23 @@ impl App {
         let mut stdout = stdout();
         stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
+        self.render_status_bar(&mut stdout)?;
         self.render_lyrics(&mut stdout)?;
         stdout.queue(MoveToNextLine(1))?;
         self.render_selection_info(&mut stdout)?;
         stdout.queue(MoveTo(0, size()?.1 - help_lines_two_column_height() as u16))?;
         self.render_help(&mut stdout)?;
         stdout.flush()?;
+        Ok(())
+    }
+
+    fn render_status_bar(&self, stdout: &mut Stdout) -> Result<()> {
+        stdout.queue(SetForegroundColor(Color::White))?;
+        stdout.queue(SetBackgroundColor(Color::Black))?;
+        stdout.queue(Clear(ClearType::CurrentLine))?;
+        stdout.queue(Print(" HANGUL-FUN"))?;
+        stdout.queue(ResetColor)?;
+        stdout.queue(MoveToNextLine(1))?;
         Ok(())
     }
 
