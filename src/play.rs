@@ -132,7 +132,6 @@ impl App {
         stdout.queue(MoveTo(0, 0))?;
         self.render_status_bar(&mut stdout)?;
         self.render_lyrics(&mut stdout)?;
-        stdout.queue(MoveToNextLine(1))?;
         self.render_selection_info(&mut stdout)?;
         stdout.queue(MoveTo(0, size()?.1 - help_lines_two_column_height() as u16))?;
         self.render_help(&mut stdout)?;
@@ -213,10 +212,29 @@ impl App {
         Ok(())
     }
 
+    fn render_horizontal_line(&self, stdout: &mut Stdout) -> Result<()> {
+        let cols = size()?.0 as usize;
+        let mut line = String::with_capacity(cols);
+        for _ in 0..cols {
+            line.push('⎯');
+        }
+        stdout.queue(Print(line))?;
+        stdout.queue(MoveToNextLine(1))?;
+        Ok(())
+    }
+
+    fn render_cleared_lines(&self, stdout: &mut Stdout, count: usize) -> Result<()> {
+        for _ in 0..count {
+            stdout.queue(Clear(ClearType::CurrentLine))?;
+            stdout.queue(MoveToNextLine(1))?;
+        }
+        Ok(())
+    }
+
     fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
-        stdout.queue(SetForegroundColor(Color::Black))?;
-        stdout.queue(SetBackgroundColor(Color::Grey))?;
         if let Some((selected_word, selected_syllable, syllable_str)) = self.get_selection() {
+            let mut clear_extra_lines = 0;
+            self.render_horizontal_line(stdout)?;
             stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(Print("Selected word: "))?;
             stdout.queue(Print(selected_word))?;
@@ -227,7 +245,7 @@ impl App {
 
             stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(Print(format!("Selected syllable: ")))?;
-            stdout.queue(PrintStyledContent(syllable_str.with(Color::Blue)))?;
+            stdout.queue(Print(syllable_str))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
                 decompose_hangul_syllable(selected_syllable)
@@ -257,10 +275,15 @@ impl App {
                         )))?;
                     }
                     stdout.queue(MoveToNextLine(1))?;
+                } else {
+                    clear_extra_lines += 1;
                 }
             }
+            self.render_horizontal_line(stdout)?;
+            self.render_cleared_lines(stdout, clear_extra_lines)?;
+        } else {
+            self.render_cleared_lines(stdout, 7)?;
         }
-        stdout.queue(ResetColor)?;
         Ok(())
     }
 
