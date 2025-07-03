@@ -8,6 +8,7 @@ use crate::{
 
 mod hangul;
 mod play;
+mod pronunciation;
 mod romanize;
 
 #[derive(Parser)]

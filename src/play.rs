@@ -21,7 +21,8 @@ use std::{
 
 use crate::{
     hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
-    romanize::{get_jamo_pronunciation, get_romanized_jamo, romanize_decomposed_hangul},
+    pronunciation::get_jamo_pronunciation,
+    romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
 
 /// Amount to rewind, in seconds, when user presses the
