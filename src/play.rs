@@ -21,7 +21,7 @@ use std::{
 
 use crate::{
     hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
-    romanize::{get_romanized_jamo, romanize_decomposed_hangul},
+    romanize::{get_jamo_pronunciation, get_romanized_jamo, romanize_decomposed_hangul},
 };
 
 /// Amount to rewind, in seconds, when user presses the
@@ -252,11 +252,14 @@ impl App {
                     initial_rom = "silent";
                 }
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
+                let medial_hint = get_jamo_pronunciation(medial_ch);
                 stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!("  Initial: {initial_ch} ({initial_rom})")))?;
                 stdout.queue(MoveToNextLine(1))?;
                 stdout.queue(Clear(ClearType::CurrentLine))?;
-                stdout.queue(Print(format!("  Medial : {medial_ch}   ({medial_rom})")))?;
+                stdout.queue(Print(format!(
+                    "  Medial : {medial_ch}   ({medial_rom}) {medial_hint}"
+                )))?;
                 stdout.queue(MoveToNextLine(1))?;
                 if let Some(final_ch) = maybe_final_ch {
                     stdout.queue(Clear(ClearType::CurrentLine))?;
