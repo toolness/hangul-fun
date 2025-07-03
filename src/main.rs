@@ -2,7 +2,10 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use crate::{
-    hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
+    hangul::{
+        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
+        hangul_jamo_to_compat_with_fallback,
+    },
     romanize::romanize_decomposed_hangul,
 };
 
@@ -40,19 +43,23 @@ fn print_char_info(ch: char) {
     let class = HangulCharClass::from(ch);
     let codepoint = ch as u32;
     let start = format!("ch={ch} ({codepoint:#x}) {class:?}");
-    let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable(ch) else {
+    let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable_to_jamos(ch)
+    else {
         println!("{start}");
         return;
     };
     let final_info = if let Some(final_ch) = maybe_final_ch {
-        format!(" final={final_ch} ({:#x})", final_ch as u32)
+        let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
+        format!(" final={final_compat} ({:#x})", final_ch as u32)
     } else {
         String::default()
     };
+    let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
+    let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
     let initial_codepoint = initial_ch as u32;
     let medial_codepoint = medial_ch as u32;
     println!(
-        "{start} initial={initial_ch} ({initial_codepoint:#x}) medial={medial_ch} ({medial_codepoint:#x}){final_info}"
+        "{start} initial={initial_compat} ({initial_codepoint:#x}) medial={medial_compat} ({medial_codepoint:#x}){final_info}"
     );
 }
 

@@ -47,7 +47,7 @@ impl HangulCharClass {
 ///
 /// If the character is not a Hangul syllable, returns
 /// None.
-pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)> {
+pub fn decompose_hangul_syllable_to_jamos(ch: char) -> Option<(char, char, Option<char>)> {
     let class = HangulCharClass::from(ch);
     let codepoint = ch as u32;
     if class != HangulCharClass::Syllables {
@@ -73,8 +73,85 @@ pub fn decompose_hangul_syllable(ch: char) -> Option<(char, char, Option<char>)>
     Some((initial_ch, medial_ch, maybe_final_ch))
 }
 
+/// Converts a Hangul Jamo to its equivalent
+/// Hangul Compatibility Jamo.
+///
+/// This can be used when you want to display the
+/// Jamo by itself, and ensure that it's displayed
+/// without weird spacing on either side (which it seems
+/// like terminals often do in inconsistent ways).
+pub fn hangul_jamo_to_compat(ch: char) -> Option<char> {
+    match ch {
+        // Consonants
+        'ᄀ' | 'ᆨ' => Some('ㄱ'),
+        'ᄁ' | 'ᆩ' => Some('ㄲ'),
+        'ᆪ' => Some('ㄳ'),
+        'ᄂ' | 'ᆫ' => Some('ㄴ'),
+        'ᆬ' => Some('ㄵ'),
+        'ᆭ' => Some('ㄶ'),
+        'ᄃ' | 'ᆮ' => Some('ㄷ'),
+        'ᄄ' => Some('ㄸ'),
+        'ᄅ' | 'ᆯ' => Some('ㄹ'),
+        'ᆰ' => Some('ㄺ'),
+        'ᆱ' => Some('ㄻ'),
+        'ᆲ' => Some('ㄼ'),
+        'ᆳ' => Some('ㄽ'),
+        'ᆴ' => Some('ㄾ'),
+        'ᆵ' => Some('ㄿ'),
+        'ᆶ' => Some('ㅀ'),
+        'ᄆ' | 'ᆷ' => Some('ㅁ'),
+        'ᄇ' | 'ᆸ' => Some('ㅂ'),
+        'ᄈ' => Some('ㅃ'),
+        'ᆹ' => Some('ㅄ'),
+        'ᄉ' | 'ᆺ' => Some('ㅅ'),
+        'ᄊ' | 'ᆻ' => Some('ㅆ'),
+        'ᄋ' | 'ᆼ' => Some('ㅇ'),
+        'ᄌ' | 'ᆽ' => Some('ㅈ'),
+        'ᄍ' => Some('ㅉ'),
+        'ᄎ' | 'ᆾ' => Some('ㅊ'),
+        'ᄏ' | 'ᆿ' => Some('ㅋ'),
+        'ᄐ' | 'ᇀ' => Some('ㅌ'),
+        'ᄑ' | 'ᇁ' => Some('ㅍ'),
+        'ᄒ' | 'ᇂ' => Some('ㅎ'),
+
+        // Vowels
+        'ᅡ' => Some('ㅏ'),
+        'ᅢ' => Some('ㅐ'),
+        'ᅣ' => Some('ㅑ'),
+        'ᅤ' => Some('ㅒ'),
+        'ᅥ' => Some('ㅓ'),
+        'ᅦ' => Some('ㅔ'),
+        'ᅧ' => Some('ㅕ'),
+        'ᅨ' => Some('ㅖ'),
+        'ᅩ' => Some('ㅗ'),
+        'ᅪ' => Some('ㅘ'),
+        'ᅫ' => Some('ㅙ'),
+        'ᅬ' => Some('ㅚ'),
+        'ᅭ' => Some('ㅛ'),
+        'ᅮ' => Some('ㅜ'),
+        'ᅯ' => Some('ㅝ'),
+        'ᅰ' => Some('ㅞ'),
+        'ᅱ' => Some('ㅟ'),
+        'ᅲ' => Some('ㅠ'),
+        'ᅳ' => Some('ㅡ'),
+        'ᅴ' => Some('ㅢ'),
+        'ᅵ' => Some('ㅣ'),
+
+        _ => None,
+    }
+}
+
+/// Converts a Hangul Jamo to its equivalent
+/// Hangul Compatibility Jamo.
+///
+/// If there isn't a corresponding one, it just returns
+/// the original character unchanged.
+pub fn hangul_jamo_to_compat_with_fallback(ch: char) -> char {
+    hangul_jamo_to_compat(ch).unwrap_or(ch)
+}
+
 fn hangul_syllable_to_jamos(ch: char) -> Option<String> {
-    if let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable(ch) {
+    if let Some((initial_ch, medial_ch, maybe_final_ch)) = decompose_hangul_syllable_to_jamos(ch) {
         if let Some(final_ch) = maybe_final_ch {
             Some(format!("{initial_ch}{medial_ch}{final_ch}"))
         } else {
@@ -105,7 +182,7 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 #[cfg(test)]
 mod test {
     use crate::hangul::{
-        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable,
+        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
     };
 
     #[test]
@@ -120,9 +197,15 @@ mod test {
 
     #[test]
     fn test_decompose_works() {
-        assert_eq!(decompose_hangul_syllable('h'), None);
-        assert_eq!(decompose_hangul_syllable('이'), Some(('ᄋ', 'ᅵ', None)));
-        assert_eq!(decompose_hangul_syllable('는'), Some(('ᄂ', 'ᅳ', Some('ᆫ'))));
+        assert_eq!(decompose_hangul_syllable_to_jamos('h'), None);
+        assert_eq!(
+            decompose_hangul_syllable_to_jamos('이'),
+            Some(('ᄋ', 'ᅵ', None))
+        );
+        assert_eq!(
+            decompose_hangul_syllable_to_jamos('는'),
+            Some(('ᄂ', 'ᅳ', Some('ᆫ')))
+        );
     }
 
     #[test]

@@ -20,7 +20,10 @@ use std::{
 };
 
 use crate::{
-    hangul::{HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable},
+    hangul::{
+        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
+        hangul_jamo_to_compat_with_fallback,
+    },
     pronunciation::get_jamo_pronunciation,
     romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
@@ -246,33 +249,38 @@ impl App {
             stdout.queue(Print(syllable_str))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
-                decompose_hangul_syllable(selected_syllable)
+                decompose_hangul_syllable_to_jamos(selected_syllable)
             {
+                let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
                 let mut initial_rom = get_romanized_jamo(initial_ch, false).unwrap_or("?");
                 if initial_rom == "" {
                     initial_rom = "silent";
                 }
+                let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
                 let medial_hint = get_jamo_pronunciation(medial_ch);
                 stdout.queue(Clear(ClearType::CurrentLine))?;
-                stdout.queue(Print(format!("  Initial: {initial_ch} ({initial_rom})")))?;
+                stdout.queue(Print(format!(
+                    "  Initial: {initial_compat} ({initial_rom})"
+                )))?;
                 stdout.queue(MoveToNextLine(1))?;
                 stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!(
-                    "  Medial : {medial_ch}   ({medial_rom}) {medial_hint}"
+                    "  Medial : {medial_compat} ({medial_rom}) {medial_hint}"
                 )))?;
                 stdout.queue(MoveToNextLine(1))?;
                 if let Some(final_ch) = maybe_final_ch {
                     stdout.queue(Clear(ClearType::CurrentLine))?;
+                    let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
                     let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
                     let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
                     if final_rom_no_vowel == final_rom_vowel {
                         stdout.queue(Print(format!(
-                            "  Final  : {final_ch}   ({final_rom_no_vowel})"
+                            "  Final  : {final_compat} ({final_rom_no_vowel})"
                         )))?;
                     } else {
                         stdout.queue(Print(format!(
-                            "  Final  : {final_ch}   ({final_rom_no_vowel}/{final_rom_vowel})"
+                            "  Final  : {final_compat} ({final_rom_no_vowel}/{final_rom_vowel})"
                         )))?;
                     }
                     stdout.queue(MoveToNextLine(1))?;
