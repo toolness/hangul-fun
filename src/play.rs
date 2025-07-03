@@ -129,7 +129,6 @@ impl App {
 
     pub fn render(&self) -> Result<()> {
         let mut stdout = stdout();
-        stdout.queue(Clear(ClearType::All))?;
         stdout.queue(MoveTo(0, 0))?;
         self.render_status_bar(&mut stdout)?;
         self.render_lyrics(&mut stdout)?;
@@ -170,6 +169,7 @@ impl App {
             let Some((_, line)) = lyrics.get(i) else {
                 break;
             };
+            stdout.queue(Clear(ClearType::CurrentLine))?;
             if i == self.curr_lyrics_line {
                 stdout.queue(Print("> "))?;
                 let mut word_idx = 0;
@@ -268,6 +268,7 @@ impl App {
         let height = help_lines_two_column_height();
         for i in 0..height {
             let first_col = HELP_LINES[i];
+            stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(PrintStyledContent(first_col.with(Color::DarkGrey)))?;
             if let Some(&second_col) = HELP_LINES.get(height + i) {
                 stdout.queue(MoveToColumn(col_2))?;
