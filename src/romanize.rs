@@ -84,7 +84,7 @@ pub fn get_jamo_pronunciation(ch: char) -> &'static str {
         'ᅣ' => "",
         'ᅤ' => "",
         'ᅥ' => "'u' as in 'bus', 'gut', 'cup'",
-        'ᅦ' => "or 'e' as in 'bed' or 'pet', indistinct fromᅢ",
+        'ᅦ' => "'e' as in 'bed' or 'pet', indistinct fromᅢ",
         'ᅧ' => "",
         'ᅨ' => "",
         'ᅩ' => "'o' as in 'ago'",
