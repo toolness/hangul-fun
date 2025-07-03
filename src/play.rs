@@ -182,7 +182,8 @@ impl App {
                                 if syllable_idx == self.curr_syllable {
                                     stdout.queue(PrintStyledContent(syllable.with(Color::Blue)))?;
                                 } else {
-                                    stdout.queue(PrintStyledContent(syllable))?;
+                                    stdout
+                                        .queue(PrintStyledContent(syllable.with(Color::Black)))?;
                                 }
                                 syllable_idx += 1;
                             }
