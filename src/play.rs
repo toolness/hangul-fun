@@ -10,7 +10,6 @@ use crossterm::{
         LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
     },
 };
-use lrc::Lyrics;
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
     fs::{File, read_to_string},
@@ -24,6 +23,7 @@ use crate::{
         HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
         hangul_jamo_to_compat_with_fallback,
     },
+    lrc::{Lyrics, parse_lrc},
     pronunciation::get_jamo_pronunciation,
     romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
@@ -413,18 +413,19 @@ fn help_lines_two_column_height() -> usize {
 }
 
 fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
-    lyrics
-        .get_timed_lines()
-        .iter()
-        .filter_map(|(time_tag, line)| {
+    let simple_vec = match lyrics {
+        Lyrics::SimpleLyrics(simple_lyrics) => simple_lyrics.0,
+        Lyrics::SyncedLyrics(synced_lyrics) => synced_lyrics.to_simple().0,
+    };
+
+    simple_vec
+        .into_iter()
+        .filter_map(|(millis, line)| {
             let trimmed_line = line.trim();
             if trimmed_line.len() == 0 {
                 None
             } else {
-                Some((
-                    Duration::from_millis(time_tag.get_timestamp() as u64),
-                    trimmed_line.to_owned(),
-                ))
+                Some((Duration::from_millis(millis), trimmed_line.to_owned()))
             }
         })
         .collect()
@@ -438,7 +439,7 @@ pub fn play(filename: &String, use_alternate_screen: bool) -> Result<()> {
             lrc_filename.to_string_lossy()
         ));
     }
-    let lyrics = lyrics_to_vec(Lyrics::from_str(read_to_string(lrc_filename)?)?);
+    let lyrics = lyrics_to_vec(parse_lrc(read_to_string(lrc_filename)?)?);
     if lyrics.is_empty() {
         return Err(anyhow!("LRC file contains no lyrics!"));
     }
