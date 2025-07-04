@@ -6,8 +6,18 @@
 /// Master" by Talk to Me in Korean.
 pub fn get_jamo_pronunciation(ch: char) -> &'static str {
     // TODO: Add other jamos
-    // TODO: Might need to add `is_next_vowel` as arg.
     match ch {
+        // Initial/final
+        'ᄀ' | 'ᆨ' => "'g' as in 'go', not as in 'giraffe'",
+        'ᄂ' | 'ᆫ' => "'n' as in 'no', with tongue touching back of teeth",
+        'ᄃ' | 'ᆮ' => "'d' as in 'study' or first 't' in start, tongue on back of teeth",
+        'ᄅ' | 'ᆯ' => "'l' at word begin, Spanish 'r' in middle, tongue back on palate",
+        'ᄆ' | 'ᆷ' => "'m' as in 'map'",
+        'ᄇ' | 'ᆸ' => "'b' as in 'busy'",
+        'ᄉ' | 'ᆺ' => "'s' as in 'slow' or 'sh' as in 'sheep'",
+        'ᄋ' | 'ᆼ' => "silent in front of vowel, after vowel 'ng' as in 'song'",
+        'ᄌ' | 'ᆽ' => "'j' as in 'Jill'",
+
         // Medial (vowel)
         'ᅡ' => "'a' as in 'father'",
         'ᅢ' => "'a' as in 'sad' or 'pan', indistinct from ㅔ",

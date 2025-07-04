@@ -256,12 +256,13 @@ impl App {
                 if initial_rom == "" {
                     initial_rom = "silent";
                 }
+                let initial_hint = get_jamo_pronunciation(initial_ch);
                 let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
                 let medial_hint = get_jamo_pronunciation(medial_ch);
                 stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!(
-                    "  Initial: {initial_compat} ({initial_rom})"
+                    "  Initial: {initial_compat} ({initial_rom}) {initial_hint}"
                 )))?;
                 stdout.queue(MoveToNextLine(1))?;
                 stdout.queue(Clear(ClearType::CurrentLine))?;
@@ -274,13 +275,15 @@ impl App {
                     let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
                     let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
                     let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
+                    let final_hint = get_jamo_pronunciation(final_ch);
+
                     if final_rom_no_vowel == final_rom_vowel {
                         stdout.queue(Print(format!(
-                            "  Final  : {final_compat} ({final_rom_no_vowel})"
+                            "  Final  : {final_compat} ({final_rom_no_vowel}) {final_hint}"
                         )))?;
                     } else {
                         stdout.queue(Print(format!(
-                            "  Final  : {final_compat} ({final_rom_no_vowel}/{final_rom_vowel})"
+                            "  Final  : {final_compat} ({final_rom_no_vowel}/{final_rom_vowel}) {final_hint}"
                         )))?;
                     }
                     stdout.queue(MoveToNextLine(1))?;
