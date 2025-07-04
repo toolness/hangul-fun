@@ -10,6 +10,7 @@ use crate::{
 };
 
 mod hangul;
+mod lrc;
 mod play;
 mod pronunciation;
 mod romanize;
