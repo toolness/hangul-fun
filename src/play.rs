@@ -431,8 +431,11 @@ fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
         .collect()
 }
 
-pub fn play(filename: &String, use_alternate_screen: bool) -> Result<()> {
-    let lrc_filename = Path::new(filename).with_extension("lrc");
+pub fn play(filename: &String, use_alternate_screen: bool, lrc: &Option<String>) -> Result<()> {
+    let lrc_filename = match lrc {
+        Some(lrc_path) => Path::new(lrc_path).to_path_buf(),
+        None => Path::new(filename).with_extension("lrc"),
+    };
     if !lrc_filename.exists() {
         return Err(anyhow!(
             "LRC file does not exist: {}",

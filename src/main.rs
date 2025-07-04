@@ -37,6 +37,9 @@ enum Commands {
         /// Disable alternate screen mode
         #[arg(long = "no-alt", default_value_t = false)]
         no_alt: bool,
+        /// Optional LRC file to use instead of the default
+        #[arg(long = "lrc")]
+        lrc: Option<String>,
     },
 }
 
@@ -80,8 +83,12 @@ fn main() -> Result<()> {
             );
             println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
         }
-        Commands::Play { filename, no_alt } => {
-            play::play(filename, !no_alt)?;
+        Commands::Play {
+            filename,
+            no_alt,
+            lrc,
+        } => {
+            play::play(filename, !no_alt, lrc)?;
         }
     }
     Ok(())
