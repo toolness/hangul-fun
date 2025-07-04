@@ -1,12 +1,12 @@
 use anyhow::Result;
 use nom::{
-    IResult,
+    IResult, Parser,
     branch::alt,
-    bytes::complete::{tag, take_until, take_while1},
-    character::complete::{char, digit1, line_ending, not_line_ending},
+    bytes::complete::{take_until, take_while1},
+    character::complete::{char, digit1, not_line_ending},
     combinator::{map, map_res, opt, value},
-    multi::{many0, many1},
-    sequence::{delimited, preceded, separated_pair, terminated, tuple},
+    multi::many1,
+    sequence::{delimited, preceded, tuple},
 };
 
 /// Simple lyrics format.
@@ -35,7 +35,7 @@ pub enum Lyrics {
 /// Parse minutes:seconds.centiseconds or minutes:seconds.milliseconds format
 fn parse_timestamp(input: &str) -> IResult<&str, u64> {
     map(
-        tuple((
+        (
             map_res(digit1, |s: &str| s.parse::<u64>()),
             char(':'),
             map_res(take_while1(|c: char| c.is_ascii_digit()), |s: &str| {
@@ -45,7 +45,7 @@ fn parse_timestamp(input: &str) -> IResult<&str, u64> {
             map_res(take_while1(|c: char| c.is_ascii_digit()), |s: &str| {
                 s.parse::<u64>()
             }),
-        )),
+        ),
         |(minutes, _, seconds, _, fraction)| {
             let fraction_len = fraction.to_string().len();
             let milliseconds = if fraction_len == 2 {
@@ -64,49 +64,44 @@ fn parse_timestamp(input: &str) -> IResult<&str, u64> {
             };
             minutes * 60 * 1000 + seconds * 1000 + milliseconds
         },
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parse a timestamp tag [mm:ss.xx]
 fn parse_timestamp_tag(input: &str) -> IResult<&str, u64> {
-    delimited(char('['), parse_timestamp, char(']'))(input)
+    delimited(char('['), parse_timestamp, char(']')).parse(input)
 }
 
 /// Parse multiple timestamp tags at the beginning of a line
 fn parse_timestamp_tags(input: &str) -> IResult<&str, Vec<u64>> {
-    many1(parse_timestamp_tag)(input)
+    many1(parse_timestamp_tag).parse(input)
 }
 
 /// Parse a word/phrase with its timestamp in synced format
 fn parse_synced_word(input: &str) -> IResult<&str, (u64, String)> {
-    map(
-        tuple((char('<'), parse_timestamp, char('>'), take_until("<"))),
-        |(_, timestamp, _, text)| (timestamp, text.to_string()),
-    )(input)
+    let (input, _) = char('<')(input)?;
+    let (input, timestamp) = parse_timestamp(input)?;
+    let (input, _) = char('>')(input)?;
+    
+    // Try to find the next '<' or use the rest of the line
+    let end_pos = input.find('<').unwrap_or(input.len());
+    let text = &input[..end_pos];
+    let remaining = &input[end_pos..];
+    
+    Ok((remaining, (timestamp, text.to_string())))
 }
 
 /// Parse the last word/phrase in a synced line (no trailing timestamp)
 fn parse_last_synced_word(input: &str) -> IResult<&str, String> {
-    map(preceded(char('>'), not_line_ending), |s: &str| {
-        s.to_string()
-    })(input)
+    // This function is no longer needed with the new parse_synced_word
+    Ok(("", input.to_string()))
 }
 
 /// Parse a complete synced lyrics line
 fn parse_synced_line(input: &str) -> IResult<&str, Vec<(u64, Vec<(u64, String)>)>> {
     let (input, timestamps) = parse_timestamp_tags(input)?;
-    let (input, synced_words) = many1(parse_synced_word)(input)?;
-    let (input, last_word) = opt(parse_last_synced_word)(input)?;
-
-    let mut words = synced_words;
-    if let Some(last) = last_word {
-        if !last.is_empty() {
-            // Use the last timestamp for the final word
-            if let Some((last_time, _)) = words.last() {
-                words.push((*last_time, last));
-            }
-        }
-    }
+    let (input, words) = many1(parse_synced_word).parse(input)?;
 
     Ok((
         input,
@@ -133,12 +128,12 @@ fn parse_simple_line(input: &str) -> IResult<&str, Vec<(u64, String)>> {
 
 /// Parse a metadata line (to be ignored)
 fn parse_metadata_line(input: &str) -> IResult<&str, ()> {
-    value((), delimited(char('['), take_until("]"), char(']')))(input)
+    value((), delimited(char('['), take_until("]"), char(']'))).parse(input)
 }
 
 /// Parse any line that should be ignored
 fn parse_ignored_line(input: &str) -> IResult<&str, ()> {
-    alt((value((), parse_metadata_line), value((), not_line_ending)))(input)
+    alt((value((), parse_metadata_line), value((), not_line_ending))).parse(input)
 }
 
 /// Parse the given LRC file. Detects if it is in simple or
@@ -180,10 +175,8 @@ pub fn parse_lrc(lyrics: String) -> Result<Lyrics> {
                 continue;
             }
 
-            // Check if it's a metadata line (single bracket pair, no timestamp format)
-            if line.starts_with('[') && line.contains(']') && !line.contains(':')
-                || (line.matches('[').count() == 1 && line.matches(']').count() == 1)
-            {
+            // Check if it's a metadata line (has brackets but no timestamp format)
+            if line.starts_with('[') && line.contains(']') && !line.contains(':') {
                 continue; // Skip metadata lines
             }
 
