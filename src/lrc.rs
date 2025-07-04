@@ -1,10 +1,9 @@
 use anyhow::Result;
 use nom::{
     IResult, Parser,
-    branch::alt,
-    bytes::complete::{take_until, take_while1},
+    bytes::complete::take_while1,
     character::complete::{char, digit1, not_line_ending},
-    combinator::{map, map_res, value},
+    combinator::{map, map_res},
     multi::many1,
     sequence::delimited,
 };
@@ -112,12 +111,6 @@ fn parse_synced_word(input: &str) -> IResult<&str, (u64, String)> {
     Ok((remaining, (timestamp, text.to_string())))
 }
 
-/// Parse the last word/phrase in a synced line (no trailing timestamp)
-fn parse_last_synced_word(input: &str) -> IResult<&str, String> {
-    // This function is no longer needed with the new parse_synced_word
-    Ok(("", input.to_string()))
-}
-
 /// Parse a complete synced lyrics line
 fn parse_synced_line(input: &str) -> IResult<&str, Vec<(u64, Vec<(u64, String)>)>> {
     let (input, timestamps) = parse_timestamp_tags(input)?;
@@ -144,16 +137,6 @@ fn parse_simple_line(input: &str) -> IResult<&str, Vec<(u64, String)>> {
             .map(|ts| (ts, text.to_string()))
             .collect(),
     ))
-}
-
-/// Parse a metadata line (to be ignored)
-fn parse_metadata_line(input: &str) -> IResult<&str, ()> {
-    value((), delimited(char('['), take_until("]"), char(']'))).parse(input)
-}
-
-/// Parse any line that should be ignored
-fn parse_ignored_line(input: &str) -> IResult<&str, ()> {
-    alt((value((), parse_metadata_line), value((), not_line_ending))).parse(input)
 }
 
 /// Parse the given LRC file. Detects if it is in simple or
