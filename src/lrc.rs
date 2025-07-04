@@ -4,9 +4,9 @@ use nom::{
     branch::alt,
     bytes::complete::{take_until, take_while1},
     character::complete::{char, digit1, not_line_ending},
-    combinator::{map, map_res, opt, value},
+    combinator::{map, map_res, value},
     multi::many1,
-    sequence::{delimited, preceded, tuple},
+    sequence::delimited,
 };
 
 /// Simple lyrics format.
@@ -83,12 +83,12 @@ fn parse_synced_word(input: &str) -> IResult<&str, (u64, String)> {
     let (input, _) = char('<')(input)?;
     let (input, timestamp) = parse_timestamp(input)?;
     let (input, _) = char('>')(input)?;
-    
+
     // Try to find the next '<' or use the rest of the line
     let end_pos = input.find('<').unwrap_or(input.len());
     let text = &input[..end_pos];
     let remaining = &input[end_pos..];
-    
+
     Ok((remaining, (timestamp, text.to_string())))
 }
 
