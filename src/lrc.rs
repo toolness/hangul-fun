@@ -14,7 +14,7 @@ use nom::{
 /// Each entry is a tuple consisting of the time in milliseconds
 /// at which the given line of lyrics (a string) is performed.
 #[derive(Debug, Clone, PartialEq)]
-pub struct SimpleLyrics(Vec<(u64, String)>);
+pub struct SimpleLyrics(pub Vec<(u64, String)>);
 
 /// Synced lyrics format.
 ///
@@ -24,7 +24,7 @@ pub struct SimpleLyrics(Vec<(u64, String)>);
 /// the time in milliseconds at which each word or phrase is
 /// performed.
 #[derive(Debug, Clone, PartialEq)]
-pub struct SyncedLyrics(Vec<(u64, Vec<(u64, String)>)>);
+pub struct SyncedLyrics(pub Vec<(u64, Vec<(u64, String)>)>);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lyrics {
@@ -35,7 +35,8 @@ pub enum Lyrics {
 impl SyncedLyrics {
     /// Convert SyncedLyrics to SimpleLyrics by joining all words in each line
     pub fn to_simple(&self) -> SimpleLyrics {
-        let simple_entries: Vec<(u64, String)> = self.0
+        let simple_entries: Vec<(u64, String)> = self
+            .0
             .iter()
             .map(|(timestamp, words)| {
                 let joined_text = words
@@ -46,7 +47,7 @@ impl SyncedLyrics {
                 (*timestamp, joined_text)
             })
             .collect();
-        
+
         SimpleLyrics(simple_entries)
     }
 }
@@ -389,15 +390,18 @@ Invalid line without timestamp
     fn test_synced_to_simple_conversion() {
         // Create a SyncedLyrics instance
         let synced_lyrics = SyncedLyrics(vec![
-            (12340, vec![
-                (12340, "First ".to_string()),
-                (13000, "word ".to_string()),
-                (13500, "synced".to_string()),
-            ]),
-            (15670, vec![
-                (15670, "Second ".to_string()),
-                (16000, "line".to_string()),
-            ]),
+            (
+                12340,
+                vec![
+                    (12340, "First ".to_string()),
+                    (13000, "word ".to_string()),
+                    (13500, "synced".to_string()),
+                ],
+            ),
+            (
+                15670,
+                vec![(15670, "Second ".to_string()), (16000, "line".to_string())],
+            ),
         ]);
 
         // Convert to SimpleLyrics
@@ -413,9 +417,12 @@ Invalid line without timestamp
     fn test_synced_to_simple_with_empty_lines() {
         // Test with some empty word lists
         let synced_lyrics = SyncedLyrics(vec![
-            (10000, vec![]),  // Empty line
-            (20000, vec![(20000, "Hello ".to_string()), (20500, "world".to_string())]),
-            (30000, vec![(30000, "".to_string())]),  // Line with empty string
+            (10000, vec![]), // Empty line
+            (
+                20000,
+                vec![(20000, "Hello ".to_string()), (20500, "world".to_string())],
+            ),
+            (30000, vec![(30000, "".to_string())]), // Line with empty string
         ]);
 
         let simple_lyrics = synced_lyrics.to_simple();
@@ -430,7 +437,14 @@ Invalid line without timestamp
     fn test_synced_to_simple_preserves_timestamps() {
         // Ensure timestamps are preserved correctly
         let synced_lyrics = SyncedLyrics(vec![
-            (5000, vec![(5000, "A ".to_string()), (5500, "B ".to_string()), (6000, "C".to_string())]),
+            (
+                5000,
+                vec![
+                    (5000, "A ".to_string()),
+                    (5500, "B ".to_string()),
+                    (6000, "C".to_string()),
+                ],
+            ),
             (10000, vec![(10000, "D".to_string())]),
         ]);
 
