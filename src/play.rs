@@ -169,7 +169,6 @@ impl App {
             let Some((_, line)) = lyrics.get(i) else {
                 break;
             };
-            stdout.queue(Clear(ClearType::CurrentLine))?;
             if i == self.curr_lyrics_line {
                 stdout.queue(Print("> "))?;
                 let mut word_idx = 0;
@@ -204,6 +203,7 @@ impl App {
                 }
                 stdout.queue(Print(&line))?;
             }
+            stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
             i += 1;
             if i >= self.first_lyrics_line + self.lyrics_lines_to_show {
@@ -236,17 +236,17 @@ impl App {
         if let Some((selected_word, selected_syllable, syllable_str)) = self.get_selection() {
             let mut clear_extra_lines = 0;
             self.render_horizontal_line(stdout)?;
-            stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(Print("Selected word: "))?;
             stdout.queue(Print(selected_word))?;
             let decomposed = decompose_all_hangul_syllables(selected_word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
+            stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
 
-            stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(Print(format!("Selected syllable: ")))?;
             stdout.queue(Print(syllable_str))?;
+            stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
                 decompose_hangul_syllable_to_jamos(selected_syllable)
@@ -260,18 +260,17 @@ impl App {
                 let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
                 let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
                 let medial_hint = get_jamo_pronunciation(medial_ch);
-                stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!(
                     "  Initial: {initial_compat} ({initial_rom}) {initial_hint}"
                 )))?;
+                stdout.queue(Clear(ClearType::UntilNewLine))?;
                 stdout.queue(MoveToNextLine(1))?;
-                stdout.queue(Clear(ClearType::CurrentLine))?;
                 stdout.queue(Print(format!(
                     "  Medial : {medial_compat} ({medial_rom}) {medial_hint}"
                 )))?;
+                stdout.queue(Clear(ClearType::UntilNewLine))?;
                 stdout.queue(MoveToNextLine(1))?;
                 if let Some(final_ch) = maybe_final_ch {
-                    stdout.queue(Clear(ClearType::CurrentLine))?;
                     let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
                     let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
                     let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
@@ -286,6 +285,7 @@ impl App {
                             "  Final  : {final_compat} ({final_rom_no_vowel}/{final_rom_vowel}) {final_hint}"
                         )))?;
                     }
+                    stdout.queue(Clear(ClearType::UntilNewLine))?;
                     stdout.queue(MoveToNextLine(1))?;
                 } else {
                     clear_extra_lines += 1;
@@ -304,12 +304,12 @@ impl App {
         let height = help_lines_two_column_height();
         for i in 0..height {
             let first_col = HELP_LINES[i];
-            stdout.queue(Clear(ClearType::CurrentLine))?;
             stdout.queue(PrintStyledContent(first_col.with(Color::DarkGrey)))?;
             if let Some(&second_col) = HELP_LINES.get(height + i) {
                 stdout.queue(MoveToColumn(col_2))?;
                 stdout.queue(PrintStyledContent(second_col.with(Color::DarkGrey)))?;
             }
+            stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
         }
         Ok(())
