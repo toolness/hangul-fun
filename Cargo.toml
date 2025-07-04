@@ -7,5 +7,5 @@ edition = "2024"
 anyhow = "1.0.98"
 clap = { version = "4.5.40", features = ["derive"] }
 crossterm = "0.29.0"
-lrc = "0.1.8"
+nom = "8.0.0"
 rodio = "0.20.1"
