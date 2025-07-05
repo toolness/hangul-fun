@@ -435,19 +435,22 @@ fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
 }
 
 pub fn play(
-    filename: &String,
+    audio_filename: &String,
     use_alternate_screen: bool,
     lrc_filename: &Option<String>,
 ) -> Result<()> {
+    let audio_filename = Path::new(audio_filename).to_path_buf();
     let lrc_filename = match lrc_filename {
         Some(lrc_path) => Path::new(lrc_path).to_path_buf(),
-        None => Path::new(filename).with_extension("lrc"),
+        None => audio_filename.with_extension("lrc"),
     };
-    if !lrc_filename.exists() {
-        return Err(anyhow!(
-            "LRC file does not exist: {}",
-            lrc_filename.to_string_lossy()
-        ));
+    for filename in [&audio_filename, &lrc_filename] {
+        if !filename.exists() {
+            return Err(anyhow!(
+                "File does not exist: {}",
+                filename.to_string_lossy()
+            ));
+        }
     }
     let lyrics = lyrics_to_vec(parse_lrc(read_to_string(lrc_filename)?)?);
     if lyrics.is_empty() {
@@ -455,7 +458,7 @@ pub fn play(
     }
     let (_stream, stream_handle) = OutputStream::try_default()?;
     let sink = Sink::try_new(&stream_handle)?;
-    let file = BufReader::new(File::open(filename)?);
+    let file = BufReader::new(File::open(audio_filename)?);
     let source = Decoder::new(file)?;
     sink.append(source);
     sink.pause();
