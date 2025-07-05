@@ -20,11 +20,11 @@ pub fn get_jamo_pronunciation(ch: char) -> &'static str {
 
         // Medial (vowel)
         'ᅡ' => "'a' as in 'father'",
-        'ᅢ' => "'a' as in 'sad' or 'pan', indistinct from ㅔ",
+        'ᅢ' => "'a' as in 'sad' or 'care', indistinct from ㅔ",
         'ᅣ' => "",
         'ᅤ' => "",
         'ᅥ' => "'u' as in 'bus', 'gut', 'cup'",
-        'ᅦ' => "'e' as in 'bed' or 'pet', indistinct from ㅐ",
+        'ᅦ' => "'e' as in 'bed' or 'a' as in 'take', indistinct from ㅐ",
         'ᅧ' => "",
         'ᅨ' => "",
         'ᅩ' => "'o' as in 'ago'",
