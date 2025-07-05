@@ -13,10 +13,15 @@ pub fn get_jamo_pronunciation(ch: char) -> &'static str {
         'ᄃ' | 'ᆮ' => "'d' as in 'study' or first 't' in start, tongue on back of teeth",
         'ᄅ' | 'ᆯ' => "'l' at word begin, Spanish 'r' in middle, tongue back on palate",
         'ᄆ' | 'ᆷ' => "'m' as in 'map'",
-        'ᄇ' | 'ᆸ' => "'b' as in 'busy'",
+        'ᄇ' | 'ᆸ' => "'b' as in 'busy', same mouth shape as ㅁ",
         'ᄉ' | 'ᆺ' => "'s' as in 'slow' or 'sh' as in 'sheep'",
         'ᄋ' | 'ᆼ' => "silent in front of vowel, after vowel 'ng' as in 'song'",
         'ᄌ' | 'ᆽ' => "'j' as in 'Jill'",
+        'ᄎ' | 'ᆾ' => "'ch' as in 'chain', like ㅈ aspirated",
+        'ᄏ' | 'ᆿ' => "'k' as in 'korea', like ㄱ aspirated",
+        'ᄐ' | 'ᇀ' => "'t' as in 'teeth', like ㄷ aspirated",
+        'ᄑ' | 'ᇁ' => "'p' as in 'power', like ㅂ aspirated",
+        'ᄒ' | 'ᇂ' => "'h' as in 'hat'",
 
         // Medial (vowel)
         'ᅡ' => "'a' as in 'father'",
