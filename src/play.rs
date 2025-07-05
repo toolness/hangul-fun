@@ -434,8 +434,12 @@ fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
         .collect()
 }
 
-pub fn play(filename: &String, use_alternate_screen: bool, lrc: &Option<String>) -> Result<()> {
-    let lrc_filename = match lrc {
+pub fn play(
+    filename: &String,
+    use_alternate_screen: bool,
+    lrc_filename: &Option<String>,
+) -> Result<()> {
+    let lrc_filename = match lrc_filename {
         Some(lrc_path) => Path::new(lrc_path).to_path_buf(),
         None => Path::new(filename).with_extension("lrc"),
     };
