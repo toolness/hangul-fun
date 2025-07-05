@@ -14,7 +14,7 @@ use rodio::{Decoder, OutputStream, Sink};
 use std::{
     fs::{File, read_to_string},
     io::{BufReader, Stdout, Write, stdout},
-    path::Path,
+    path::{Path, PathBuf},
     time::Duration,
 };
 
@@ -44,6 +44,7 @@ const HELP_LINES: [&'static str; NUM_HELP_LINES] = [
 ];
 
 struct App {
+    title: String,
     lyrics_lines_to_show: usize,
     first_lyrics_line: usize,
     curr_lyrics_line: usize,
@@ -152,9 +153,10 @@ impl App {
         stdout.queue(SetAttribute(Attribute::Reverse))?;
         let columns = size()?.0 as usize;
         stdout.queue(Print(format!(
-            " HANGUL-FUN{:>width$} ",
+            " HANGUL-FUN {:>width$.width$} {} ",
+            self.title,
             self.playback_icon(),
-            width = columns - 11
+            width = columns - 15
         )))?;
         stdout.queue(SetAttribute(Attribute::NoReverse))?;
         stdout.queue(MoveToNextLine(1))?;
@@ -434,6 +436,24 @@ fn lyrics_to_vec(lyrics: Lyrics) -> Vec<(Duration, String)> {
         .collect()
 }
 
+fn get_title(audio_filename: &PathBuf, lrc_filename: &PathBuf) -> String {
+    let audio = audio_filename
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy();
+    if audio.len() == 0 {
+        String::default()
+    } else if audio_filename.file_stem() == lrc_filename.file_stem() {
+        format!("{audio}/lrc")
+    } else {
+        let lrc = lrc_filename
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
+        format!("{audio} / {lrc}")
+    }
+}
+
 pub fn play(
     audio_filename: &String,
     use_alternate_screen: bool,
@@ -452,6 +472,7 @@ pub fn play(
             ));
         }
     }
+    let title = get_title(&audio_filename, &lrc_filename);
     let lyrics = lyrics_to_vec(parse_lrc(read_to_string(lrc_filename)?)?);
     if lyrics.is_empty() {
         return Err(anyhow!("LRC file contains no lyrics!"));
@@ -463,6 +484,7 @@ pub fn play(
     sink.append(source);
     sink.pause();
     let mut app = App {
+        title,
         lyrics,
         sink,
         lyrics_lines_to_show: size()?.1 as usize / 2,
@@ -483,4 +505,46 @@ pub fn play(
         execute!(stdout(), LeaveAlternateScreen)?;
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_get_title_same_stem() {
+        let audio = PathBuf::from("/path/to/song.mp3");
+        let lrc = PathBuf::from("/path/to/song.lrc");
+
+        let title = get_title(&audio, &lrc);
+        assert_eq!(title, "song.mp3/lrc");
+    }
+
+    #[test]
+    fn test_get_title_different_stems() {
+        let audio = PathBuf::from("/path/to/audio_file.mp3");
+        let lrc = PathBuf::from("/path/to/lyrics_file.lrc");
+
+        let title = get_title(&audio, &lrc);
+        assert_eq!(title, "audio_file.mp3 / lyrics_file.lrc");
+    }
+
+    #[test]
+    fn test_get_title_no_extension() {
+        let audio = PathBuf::from("/path/to/audiofile");
+        let lrc = PathBuf::from("/path/to/lrcfile");
+
+        let title = get_title(&audio, &lrc);
+        assert_eq!(title, "audiofile / lrcfile");
+    }
+
+    #[test]
+    fn test_get_title_empty_path() {
+        let audio = PathBuf::from("");
+        let lrc = PathBuf::from("");
+
+        let title = get_title(&audio, &lrc);
+        assert_eq!(title, "");
+    }
 }
