@@ -48,6 +48,13 @@ impl HangulCharClass {
 /// If the character is not a Hangul syllable, returns
 /// None.
 pub fn decompose_hangul_syllable_to_jamos(ch: char) -> Option<(char, char, Option<char>)> {
+    // Pre-composeed Hangul syllables are algorithmically defined from jamos by a
+    // formula defined here:
+    //
+    //   https://en.wikipedia.org/wiki/Korean_language_and_computers#Hangul_Syllables_block
+    //
+    // The following code basically does this computation "in reverse" to determine
+    // the individual jamos that constitute a syllable.
     let class = HangulCharClass::from(ch);
     let codepoint = ch as u32;
     if class != HangulCharClass::Syllables {
