@@ -34,5 +34,9 @@ You can also decode individual strings of Hangul like this:
 cargo run decode '밥을'
 ```
 
+## License
+
+Everything in this repository is licensed under [CC0 1.0 Universal](./LICENSE.md) (public domain).
+
 [LRC]: https://en.m.wikipedia.org/wiki/LRC_(file_format)
 [syncedlyrics]: https://pypi.org/project/syncedlyrics/
