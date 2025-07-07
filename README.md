@@ -1,3 +1,13 @@
+This is a tool to learn Hangul from K-pop songs.
+
+Users can navigate through the individual Korean words and syllables
+in a K-pop song, reading hints on pronunciation.
+
+Pressing enter on any line will play the song at that line, allowing
+the user to hear the words pronounced in the context of the song.
+
+![Screenshot](screenshot.png)
+
 # Quick start
 
 ## Playing songs with lyrics
