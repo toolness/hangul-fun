@@ -1,4 +1,4 @@
-This is a tool to learn Hangul from K-pop songs.
+This is a CLI tool to learn Hangul from K-pop songs.
 
 Users can navigate through the individual Korean words and syllables
 in a K-pop song, reading hints on pronunciation.
@@ -10,22 +10,39 @@ the user to hear the words pronounced in the context of the song.
 
 # Quick start
 
+You will need [Rust](https://www.rust-lang.org/).
+
+To install, at the root of the repository, run:
+
+```
+cargo install --path .
+```
+
 ## Playing songs with lyrics
 
-You need to put music and lyrics in the `music` subdirectory.
+You first need to obtain music and lyrics yourself.
 
 Lyrics should be in [LRC][] file format. You can get them via a
 tool like [syncedlyrics][].
 
 Each song should have the same base stem, e.g. `boop.mp3` and `boop.lrc`.
 
-You can then play the song with:
+Assuming the files are in the `music` subdirectory, you can then play the
+song with:
 
 ```
-cargo run play music/boop.mp3
+hangul-fun play music/boop.mp3
 ```
 
-### Debugging
+## Decoding hangul
+
+You can also decode individual strings of Hangul like this:
+
+```
+hangul-fun decode '밥을'
+```
+
+## Development
 
 Note that if the program crashes, you may not see a backtrace, or even
 any hint of what caused the crash. If this happens, try the following:
@@ -35,14 +52,6 @@ cargo run play music/boop.mp3 2> stderr.log
 ```
 
 Then open `stderr.log` after the program crashes.
-
-## Decoding hangul
-
-You can also decode individual strings of Hangul like this:
-
-```
-cargo run decode '밥을'
-```
 
 ## License
 
