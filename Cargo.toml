@@ -2,6 +2,7 @@
 name = "hangul-fun"
 version = "0.1.0"
 edition = "2024"
+authors = ["Atul Varma <varmaa@gmail.com>"]
 
 [dependencies]
 anyhow = "1.0.98"
