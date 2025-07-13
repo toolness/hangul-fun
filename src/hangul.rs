@@ -22,6 +22,8 @@ impl From<char> for HangulCharClass {
 }
 
 impl HangulCharClass {
+    /// Splits the given string into a list of contiguous
+    /// `HangulCharClass` chunks.
     pub fn split(value: &str) -> Vec<(HangulCharClass, &str)> {
         let mut result = vec![];
         let mut pos: Option<(usize, HangulCharClass)> = None;
