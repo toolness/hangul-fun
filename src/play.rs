@@ -274,11 +274,11 @@ impl App {
             if initial_rom == "" {
                 initial_rom = "silent";
             }
-            let initial_hint = get_jamo_pronunciation(initial_ch);
+            let initial_hint = get_jamo_pronunciation(&selection.initial_jamo);
             let medial_ch = selection.medial_jamo.curr;
             let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
             let medial_rom = get_romanized_jamo(&selection.medial_jamo).unwrap_or("?");
-            let medial_hint = get_jamo_pronunciation(medial_ch);
+            let medial_hint = get_jamo_pronunciation(&selection.medial_jamo);
             stdout.queue(Print(format!(
                 "  Initial: {initial_compat} ({initial_rom}) {initial_hint}"
             )))?;
@@ -293,7 +293,7 @@ impl App {
                 let final_ch = final_jamo.curr;
                 let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
                 let final_rom = get_romanized_jamo(&final_jamo).unwrap_or("?");
-                let final_hint = get_jamo_pronunciation(final_ch);
+                let final_hint = get_jamo_pronunciation(&final_jamo);
                 stdout.queue(Print(format!(
                     "  Final  : {final_compat} ({final_rom}) {final_hint}"
                 )))?;

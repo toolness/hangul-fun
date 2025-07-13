@@ -1,13 +1,17 @@
+use crate::jamo_stream::JamoInStream;
+
 /// Return advice on the pronunciation of the given jamo.
 ///
 /// Returns an empty string if there is no advice.
 ///
 /// Many of these hints are taken from the book "Hangeul
 /// Master" by Talk to Me in Korean.
-pub fn get_jamo_pronunciation(ch: char) -> &'static str {
-    // TODO: Add other jamos
-    match ch {
+pub fn get_jamo_pronunciation(jamo: &JamoInStream) -> &'static str {
+    // TODO: Support compound final consonants
+    // TODO: Support linking sounds??
+    match jamo.curr {
         // Initial/final
+        // TODO: Final consonants (bat-chim) have different pronunciations than initial ones!
         'ᄀ' | 'ᆨ' => "'g' as in 'go', not as in 'giraffe'",
         'ᄁ' | 'ᆩ' => "'ch' after 's', as in 'school'",
         'ᄂ' | 'ᆫ' => "'n' as in 'no', with tongue touching back of teeth",
