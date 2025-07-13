@@ -1,4 +1,4 @@
-use crate::jamo_stream::JamoInStream;
+use crate::jamo_stream::{JamoInStream, JamoStream};
 
 /// Return advice on the pronunciation of the given jamo.
 ///
@@ -64,5 +64,111 @@ pub fn get_jamo_pronunciation(jamo: &JamoInStream) -> &'static str {
         'ᆼ' => "'ng' as in 'ring'",
 
         _ => "",
+    }
+}
+
+/**
+ * Represents a character from the Hangul Jamo unicode block.
+ *
+ * Specifically, it only includes the modern characters, and
+ * ignores the archaic ones:
+ *
+ * https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)
+ */
+#[derive(Copy, Clone)]
+pub enum ModernJamo {
+    InitialConsonant(char),
+    Vowel(char),
+    FinalConsonant(char),
+}
+
+impl ModernJamo {
+    pub fn try_from_char(char: char) -> Option<Self> {
+        match char {
+            'ᄀ'..='ᄒ' => Some(ModernJamo::InitialConsonant(char)),
+            'ᅡ'..='ᅵ' => Some(ModernJamo::Vowel(char)),
+            'ᆨ'..='ᇂ' => Some(ModernJamo::FinalConsonant(char)),
+            _ => None,
+        }
+    }
+}
+
+impl Into<char> for ModernJamo {
+    fn into(self) -> char {
+        match self {
+            ModernJamo::InitialConsonant(ch) => ch,
+            ModernJamo::Vowel(ch) => ch,
+            ModernJamo::FinalConsonant(ch) => ch,
+        }
+    }
+}
+
+/// Compound consonant rules are defined in Talk To Me in Korean's
+/// "Hangul Master" pg. 57-59.
+///
+/// Takes a final consonant and the next initial consonant after it
+/// and returns the effective new final consonant and next initial
+/// one.
+fn apply_compound_consonant_rules(
+    final_consonant: ModernJamo,
+    next_initial_consonant: Option<ModernJamo>,
+) -> (ModernJamo, Option<ModernJamo>) {
+    use ModernJamo::*;
+    match (final_consonant, next_initial_consonant) {
+        (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
+            (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄊ')))
+        }
+        (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
+        // TODO: Add the rest of them.
+        _ => (final_consonant, next_initial_consonant),
+    }
+}
+
+fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
+    let mut result = String::with_capacity(value.as_ref().len());
+    let mut skip_next_initial_consonant = false;
+    for jamo in JamoStream::from_jamos(value) {
+        match ModernJamo::try_from_char(jamo.curr) {
+            Some(ModernJamo::InitialConsonant(ch)) => {
+                if skip_next_initial_consonant {
+                    skip_next_initial_consonant = false;
+                } else {
+                    result.push(ch);
+                }
+            }
+            Some(ModernJamo::Vowel(ch)) => {
+                result.push(ch);
+            }
+            Some(ModernJamo::FinalConsonant(ch)) => {
+                let (final_consonant, next_initial_consonant) = apply_compound_consonant_rules(
+                    ModernJamo::FinalConsonant(ch),
+                    jamo.next
+                        .map(|char| ModernJamo::try_from_char(char))
+                        .flatten(),
+                );
+                result.push(final_consonant.into());
+                if let Some(next_initial_consonant) = next_initial_consonant {
+                    result.push(next_initial_consonant.into());
+                    skip_next_initial_consonant = true;
+                }
+            }
+            None => {
+                result.push(jamo.curr);
+            }
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::pronunciation::apply_pronunciation_rules_to_jamos;
+
+    #[test]
+    fn test_compound_consonant_rules_work() {
+        assert_eq!(
+            apply_pronunciation_rules_to_jamos("넋을"),
+            "넉쓸".to_owned()
+        );
     }
 }

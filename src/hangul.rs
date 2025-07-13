@@ -199,55 +199,6 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
     result
 }
 
-/**
- * Represents a character from the Hangul Jamo unicode block.
- *
- * Specifically, it only includes the modern characters, and
- * ignores the archaic ones:
- *
- * https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)
- */
-#[derive(Copy, Clone)]
-pub enum ModernJamo {
-    InitialConsonant(char),
-    Vowel(char),
-    FinalConsonant(char),
-}
-
-impl ModernJamo {
-    pub fn try_from_char(char: char) -> Option<Self> {
-        match char {
-            'ᄀ'..='ᄒ' => Some(ModernJamo::InitialConsonant(char)),
-            'ᅡ'..='ᅵ' => Some(ModernJamo::Vowel(char)),
-            'ᆨ'..='ᇂ' => Some(ModernJamo::FinalConsonant(char)),
-            _ => None,
-        }
-    }
-}
-
-/// Compound consonant rules are defined in Talk To Me in Korean's
-/// "Hangul Master" pg. 57-59.
-///
-/// Takes a final consonant and the next initial consonant after it
-/// and returns the effective new final consonant and next initial
-/// one.
-fn apply_compound_consonant_rules(
-    final_consonant: ModernJamo,
-    next_initial_consonant: ModernJamo,
-) -> Option<(ModernJamo, ModernJamo)> {
-    use ModernJamo::*;
-    match (final_consonant, next_initial_consonant) {
-        (FinalConsonant('ᆪ'), InitialConsonant('ᄋ')) => {
-            Some((FinalConsonant('ᆨ'), InitialConsonant('ᄊ')))
-        }
-        (FinalConsonant('ᆪ'), InitialConsonant(_)) => {
-            Some((FinalConsonant('ᆨ'), next_initial_consonant))
-        }
-        // TODO: Add the rest of them.
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::hangul::{
