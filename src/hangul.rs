@@ -82,6 +82,17 @@ pub fn decompose_hangul_syllable_to_jamos(ch: char) -> Option<(char, char, Optio
     Some((initial_ch, medial_ch, maybe_final_ch))
 }
 
+/// Counts how many jamos are in the given Hangul syllable.
+///
+/// If the character is not a Hangul syllable, returns 0.
+pub fn count_jamos_in_syllable(ch: char) -> usize {
+    match decompose_hangul_syllable_to_jamos(ch) {
+        None => 0,
+        Some((_, _, None)) => 2,
+        _ => 3,
+    }
+}
+
 /// Converts a Hangul Jamo to its equivalent
 /// Hangul Compatibility Jamo.
 ///

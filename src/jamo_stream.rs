@@ -18,7 +18,6 @@ pub struct JamoStream {
 }
 
 impl JamoStream {
-    #[cfg(test)]
     pub fn from_hangul_syllables<T: AsRef<str>>(value: T) -> Self {
         use crate::hangul::decompose_all_hangul_syllables;
         Self::from_jamos(decompose_all_hangul_syllables(value))
@@ -27,6 +26,10 @@ impl JamoStream {
     pub fn from_jamos<T: AsRef<str>>(value: T) -> Self {
         let jamos = value.as_ref().chars().collect();
         Self { jamos, index: 0 }
+    }
+
+    pub fn seek(&mut self, index: usize) {
+        self.index = index;
     }
 }
 
