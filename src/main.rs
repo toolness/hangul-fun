@@ -10,6 +10,7 @@ use crate::{
 };
 
 mod hangul;
+mod jamo_stream;
 mod lrc;
 mod play;
 mod pronunciation;
