@@ -270,14 +270,14 @@ impl App {
             stdout.queue(MoveToNextLine(1))?;
             let initial_ch = selection.initial_jamo.curr;
             let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
-            let mut initial_rom = get_romanized_jamo(initial_ch, false).unwrap_or("?");
+            let mut initial_rom = get_romanized_jamo(&selection.initial_jamo).unwrap_or("?");
             if initial_rom == "" {
                 initial_rom = "silent";
             }
             let initial_hint = get_jamo_pronunciation(initial_ch);
             let medial_ch = selection.medial_jamo.curr;
             let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
-            let medial_rom = get_romanized_jamo(medial_ch, false).unwrap_or("?");
+            let medial_rom = get_romanized_jamo(&selection.medial_jamo).unwrap_or("?");
             let medial_hint = get_jamo_pronunciation(medial_ch);
             stdout.queue(Print(format!(
                 "  Initial: {initial_compat} ({initial_rom}) {initial_hint}"
@@ -292,19 +292,11 @@ impl App {
             if let Some(final_jamo) = selection.final_jamo {
                 let final_ch = final_jamo.curr;
                 let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
-                let final_rom_no_vowel = get_romanized_jamo(final_ch, false).unwrap_or("?");
-                let final_rom_vowel = get_romanized_jamo(final_ch, true).unwrap_or("?");
+                let final_rom = get_romanized_jamo(&final_jamo).unwrap_or("?");
                 let final_hint = get_jamo_pronunciation(final_ch);
-
-                if final_rom_no_vowel == final_rom_vowel {
-                    stdout.queue(Print(format!(
-                        "  Final  : {final_compat} ({final_rom_no_vowel}) {final_hint}"
-                    )))?;
-                } else {
-                    stdout.queue(Print(format!(
-                            "  Final  : {final_compat} ({final_rom_no_vowel}/{final_rom_vowel}) {final_hint}"
-                        )))?;
-                }
+                stdout.queue(Print(format!(
+                    "  Final  : {final_compat} ({final_rom}) {final_hint}"
+                )))?;
                 stdout.queue(Clear(ClearType::UntilNewLine))?;
                 stdout.queue(MoveToNextLine(1))?;
             } else {

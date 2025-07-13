@@ -1,4 +1,4 @@
-use crate::jamo_stream::JamoStream;
+use crate::jamo_stream::{JamoInStream, JamoStream};
 
 /// Get the romanization of a final consonant, when there is no vowel following it.
 fn get_final_with_no_next_vowel(ch: char) -> Option<&'static str> {
@@ -75,8 +75,8 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
 /// `is_next_vowel` represents whether the syllable
 /// following the final consonant of this syllable is
 /// a vowel.
-pub fn get_romanized_jamo(ch: char, is_next_vowel: bool) -> Option<&'static str> {
-    match ch {
+pub fn get_romanized_jamo(jamo: &JamoInStream) -> Option<&'static str> {
+    match jamo.curr {
         // Initial
         'ᄀ' => Some("g"),
         'ᄁ' => Some("kk"),
@@ -122,10 +122,10 @@ pub fn get_romanized_jamo(ch: char, is_next_vowel: bool) -> Option<&'static str>
         'ᅵ' => Some("i"),
 
         _ => {
-            if is_next_vowel {
-                get_final_with_next_vowel(ch)
+            if jamo.is_final_consonant_followed_by_vowel() {
+                get_final_with_next_vowel(jamo.curr)
             } else {
-                get_final_with_no_next_vowel(ch)
+                get_final_with_no_next_vowel(jamo.curr)
             }
         }
     }
@@ -138,9 +138,7 @@ pub fn romanize_decomposed_hangul<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
     let stream = JamoStream::from_jamos(value);
     for jamo in stream {
-        if let Some(romanized) =
-            get_romanized_jamo(jamo.curr, jamo.is_final_consonant_followed_by_vowel())
-        {
+        if let Some(romanized) = get_romanized_jamo(&jamo) {
             result.push_str(romanized);
         } else {
             result.push(jamo.curr);
