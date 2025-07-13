@@ -239,28 +239,23 @@ impl App {
     }
 
     fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
-        if let Some(Selection {
-            word,
-            syllable,
-            syllable_str,
-        }) = self.get_selection()
-        {
+        if let Some(selection) = self.get_selection() {
             let mut clear_extra_lines = 0;
             self.render_horizontal_line(stdout)?;
             stdout.queue(Print("Selected word: "))?;
-            stdout.queue(Print(word))?;
-            let decomposed = decompose_all_hangul_syllables(word);
+            stdout.queue(Print(selection.word))?;
+            let decomposed = decompose_all_hangul_syllables(selection.word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
 
             stdout.queue(Print(format!("Selected syllable: ")))?;
-            stdout.queue(Print(syllable_str))?;
+            stdout.queue(Print(selection.syllable_str))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
-                decompose_hangul_syllable_to_jamos(syllable)
+                decompose_hangul_syllable_to_jamos(selection.syllable)
             {
                 let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
                 let mut initial_rom = get_romanized_jamo(initial_ch, false).unwrap_or("?");
