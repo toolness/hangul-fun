@@ -95,7 +95,7 @@ impl App {
         Ok(())
     }
 
-    fn get_selection(&self) -> Option<(&str, char, &str)> {
+    fn get_selection(&self) -> Option<Selection> {
         if let Some((_, line)) = self.lyrics.get(self.curr_lyrics_line) {
             let mut word_idx = 0;
             for (class, word) in HangulCharClass::split(&line) {
@@ -104,7 +104,11 @@ impl App {
                         let mut syllable_idx = 0;
                         for (idx, char) in word.char_indices() {
                             if syllable_idx == self.curr_syllable {
-                                return Some((word, char, &word[idx..idx + char.len_utf8()]));
+                                return Some(Selection {
+                                    word,
+                                    syllable: char,
+                                    syllable_str: &word[idx..idx + char.len_utf8()],
+                                });
                             }
                             syllable_idx += 1;
                         }
@@ -235,12 +239,17 @@ impl App {
     }
 
     fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
-        if let Some((selected_word, selected_syllable, syllable_str)) = self.get_selection() {
+        if let Some(Selection {
+            word,
+            syllable,
+            syllable_str,
+        }) = self.get_selection()
+        {
             let mut clear_extra_lines = 0;
             self.render_horizontal_line(stdout)?;
             stdout.queue(Print("Selected word: "))?;
-            stdout.queue(Print(selected_word))?;
-            let decomposed = decompose_all_hangul_syllables(selected_word);
+            stdout.queue(Print(word))?;
+            let decomposed = decompose_all_hangul_syllables(word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
@@ -251,7 +260,7 @@ impl App {
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
             if let Some((initial_ch, medial_ch, maybe_final_ch)) =
-                decompose_hangul_syllable_to_jamos(selected_syllable)
+                decompose_hangul_syllable_to_jamos(syllable)
             {
                 let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
                 let mut initial_rom = get_romanized_jamo(initial_ch, false).unwrap_or("?");
@@ -403,6 +412,12 @@ impl App {
         let curr_pos = self.sink.get_pos();
         self.seek_to(curr_pos.saturating_sub(Duration::from_secs(REWIND_SECS)))
     }
+}
+
+struct Selection<'a> {
+    word: &'a str,
+    syllable: char,
+    syllable_str: &'a str,
 }
 
 fn key(code: KeyCode) -> Event {
