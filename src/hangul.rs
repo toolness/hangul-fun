@@ -44,6 +44,48 @@ impl HangulCharClass {
     }
 }
 
+/// Composes the given Hangul jamos into a single Hangul syllable.
+///
+/// If any of the characters are not a Hangul jamo, returns
+/// None.
+pub fn compose_hangul_jamos_to_syllable<T: Iterator<Item = char>>(mut chars: T) -> Option<char> {
+    // Pre-composeed Hangul syllables are algorithmically defined from jamos by a
+    // formula defined here:
+    //
+    //   https://en.wikipedia.org/wiki/Korean_language_and_computers#Hangul_Syllables_block
+    let Some(initial_ch) = chars.next() else {
+        return None;
+    };
+    let Some(initial_idx) = (initial_ch as u32).checked_sub(0x1100) else {
+        return None;
+    };
+    let Some(medial_ch) = chars.next() else {
+        return None;
+    };
+    let Some(medial_idx) = (medial_ch as u32).checked_sub(0x1161) else {
+        return None;
+    };
+    let final_idx = match chars.next() {
+        Some(final_ch) => match (final_ch as u32).checked_sub(0x11a7) {
+            Some(final_idx) => final_idx,
+            None => {
+                return None;
+            }
+        },
+        None => 0,
+    };
+
+    let codepoint = initial_idx * 588 + medial_idx * 28 + final_idx + 0xac00;
+    let Ok(syllable) = char::try_from(codepoint) else {
+        return None;
+    };
+    if HangulCharClass::from(syllable) == HangulCharClass::Syllables {
+        Some(syllable)
+    } else {
+        None
+    }
+}
+
 /// Decomposes the given Hangul syllable into its
 /// composite Hangul jamos.
 ///
@@ -202,7 +244,8 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 #[cfg(test)]
 mod test {
     use crate::hangul::{
-        HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
+        HangulCharClass, compose_hangul_jamos_to_syllable, decompose_all_hangul_syllables,
+        decompose_hangul_syllable_to_jamos,
     };
 
     #[test]
@@ -212,6 +255,31 @@ mod test {
         assert_eq!(
             HangulCharClass::from('ㄱ'),
             HangulCharClass::CompatibilityJamo
+        );
+    }
+
+    #[test]
+    fn test_compose_returns_none_with_non_jamos() {
+        assert_eq!(compose_hangul_jamos_to_syllable("h".chars()), None);
+    }
+
+    #[test]
+    fn test_compose_combines_two_jamos() {
+        let decomposed = "이";
+        assert_eq!(decomposed.chars().count(), 2);
+        assert_eq!(
+            compose_hangul_jamos_to_syllable(decomposed.chars()),
+            Some('이')
+        );
+    }
+
+    #[test]
+    fn test_compose_combines_three_jamos() {
+        let decomposed = "인";
+        assert_eq!(decomposed.chars().count(), 3);
+        assert_eq!(
+            compose_hangul_jamos_to_syllable(decomposed.chars()),
+            Some('인')
         );
     }
 
