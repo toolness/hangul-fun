@@ -103,11 +103,10 @@ impl App {
                 if class == HangulCharClass::Syllables {
                     if word_idx == self.curr_word {
                         let mut syllable_idx = 0;
-                        let mut jamo_idx = 0;
                         for (idx, char) in word.char_indices() {
                             if syllable_idx == self.curr_syllable {
                                 let mut jamo_stream = JamoStream::from_hangul_syllables(&word);
-                                jamo_stream.seek(jamo_idx);
+                                jamo_stream.seek_to_syllable(syllable_idx);
                                 let initial_jamo = jamo_stream.next().unwrap();
                                 let medial_jamo = jamo_stream.next().unwrap();
                                 let final_jamo = if count_jamos_in_syllable(char) == 3 {
@@ -124,7 +123,6 @@ impl App {
                                 });
                             }
                             syllable_idx += 1;
-                            jamo_idx += count_jamos_in_syllable(char);
                         }
                     }
                     word_idx += 1;

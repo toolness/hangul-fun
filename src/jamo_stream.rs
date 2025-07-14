@@ -15,6 +15,7 @@ impl JamoInStream {
 
 pub struct JamoStream {
     jamos: Vec<char>,
+    syllable_indices: Vec<usize>,
     index: usize,
 }
 
@@ -25,12 +26,25 @@ impl JamoStream {
     }
 
     pub fn from_jamos<T: AsRef<str>>(value: T) -> Self {
-        let jamos = value.as_ref().chars().collect();
-        Self { jamos, index: 0 }
+        let jamos: Vec<char> = value.as_ref().chars().collect();
+        let mut syllable_indices = Vec::with_capacity(jamos.len() / 2);
+        for (index, jamo) in jamos.iter().enumerate() {
+            if ModernJamo::is_initial_consonant(*jamo) {
+                syllable_indices.push(index);
+            }
+        }
+
+        Self {
+            jamos,
+            syllable_indices,
+            index: 0,
+        }
     }
 
-    pub fn seek(&mut self, index: usize) {
-        self.index = index;
+    pub fn seek_to_syllable(&mut self, index: usize) {
+        if let Some(&jamo_index) = self.syllable_indices.get(index) {
+            self.index = jamo_index;
+        }
     }
 }
 
@@ -55,6 +69,49 @@ impl Iterator for JamoStream {
             next,
             after_next,
         })
+    }
+}
+
+/**
+ * Represents a character from the Hangul Jamo unicode block.
+ *
+ * Specifically, it only includes the modern characters, and
+ * ignores the archaic ones:
+ *
+ * https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)
+ */
+#[derive(Copy, Clone)]
+pub enum ModernJamo {
+    InitialConsonant(char),
+    Vowel(char),
+    FinalConsonant(char),
+}
+
+impl ModernJamo {
+    pub fn try_from_char(char: char) -> Option<Self> {
+        match char {
+            'ᄀ'..='ᄒ' => Some(ModernJamo::InitialConsonant(char)),
+            'ᅡ'..='ᅵ' => Some(ModernJamo::Vowel(char)),
+            'ᆨ'..='ᇂ' => Some(ModernJamo::FinalConsonant(char)),
+            _ => None,
+        }
+    }
+
+    pub fn is_initial_consonant(char: char) -> bool {
+        match Self::try_from_char(char) {
+            Some(ModernJamo::InitialConsonant(_)) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Into<char> for ModernJamo {
+    fn into(self) -> char {
+        match self {
+            ModernJamo::InitialConsonant(ch) => ch,
+            ModernJamo::Vowel(ch) => ch,
+            ModernJamo::FinalConsonant(ch) => ch,
+        }
     }
 }
 

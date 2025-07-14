@@ -1,4 +1,4 @@
-use crate::jamo_stream::{JamoInStream, JamoStream};
+use crate::jamo_stream::{JamoInStream, JamoStream, ModernJamo};
 
 /// Return advice on the pronunciation of the given jamo.
 ///
@@ -64,42 +64,6 @@ pub fn get_jamo_pronunciation(jamo: &JamoInStream) -> &'static str {
         'ᆼ' => "'ng' as in 'ring'",
 
         _ => "",
-    }
-}
-
-/**
- * Represents a character from the Hangul Jamo unicode block.
- *
- * Specifically, it only includes the modern characters, and
- * ignores the archaic ones:
- *
- * https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)
- */
-#[derive(Copy, Clone)]
-pub enum ModernJamo {
-    InitialConsonant(char),
-    Vowel(char),
-    FinalConsonant(char),
-}
-
-impl ModernJamo {
-    pub fn try_from_char(char: char) -> Option<Self> {
-        match char {
-            'ᄀ'..='ᄒ' => Some(ModernJamo::InitialConsonant(char)),
-            'ᅡ'..='ᅵ' => Some(ModernJamo::Vowel(char)),
-            'ᆨ'..='ᇂ' => Some(ModernJamo::FinalConsonant(char)),
-            _ => None,
-        }
-    }
-}
-
-impl Into<char> for ModernJamo {
-    fn into(self) -> char {
-        match self {
-            ModernJamo::InitialConsonant(ch) => ch,
-            ModernJamo::Vowel(ch) => ch,
-            ModernJamo::FinalConsonant(ch) => ch,
-        }
     }
 }
 
