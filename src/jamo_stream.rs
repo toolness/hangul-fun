@@ -3,7 +3,6 @@ pub struct JamoInStream {
     pub curr: char,
     pub prev: Option<char>,
     pub next: Option<char>,
-    pub after_next: Option<char>,
 }
 
 impl JamoInStream {
@@ -61,14 +60,8 @@ impl Iterator for JamoStream {
             self.jamos.get(self.index - 1).cloned()
         };
         let next = self.jamos.get(self.index + 1).cloned();
-        let after_next = self.jamos.get(self.index + 2).cloned();
         self.index += 1;
-        Some(JamoInStream {
-            curr,
-            prev,
-            next,
-            after_next,
-        })
+        Some(JamoInStream { curr, prev, next })
     }
 }
 
@@ -129,7 +122,6 @@ mod tests {
                 prev: None,
                 curr: 'ᄇ',
                 next: Some('ᅡ'),
-                after_next: Some('ᆸ')
             }
         );
 
@@ -139,7 +131,6 @@ mod tests {
                 prev: Some('ᄇ'),
                 curr: 'ᅡ',
                 next: Some('ᆸ'),
-                after_next: None
             }
         );
 
@@ -149,7 +140,6 @@ mod tests {
                 prev: Some('ᅡ'),
                 curr: 'ᆸ',
                 next: None,
-                after_next: None
             }
         );
 
