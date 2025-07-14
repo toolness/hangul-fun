@@ -1,8 +1,11 @@
+use crate::hangul::compose_hangul_jamos_to_syllable;
+
 #[derive(PartialEq, Debug)]
 pub struct JamoInStream {
     pub curr: char,
     pub prev: Option<char>,
     pub next: Option<char>,
+    pub next_syllable: Option<char>,
 }
 
 impl JamoInStream {
@@ -16,6 +19,7 @@ pub struct JamoStream {
     jamos: Vec<char>,
     syllable_indices: Vec<usize>,
     index: usize,
+    syllable_index: usize,
 }
 
 impl JamoStream {
@@ -37,6 +41,7 @@ impl JamoStream {
             jamos,
             syllable_indices,
             index: 0,
+            syllable_index: 0,
         }
     }
 
@@ -44,6 +49,17 @@ impl JamoStream {
         if let Some(&jamo_index) = self.syllable_indices.get(index) {
             self.index = jamo_index;
         }
+    }
+
+    fn get_syllable_at(&mut self, index: usize) -> Option<char> {
+        let Some(&jamo_start_index) = self.syllable_indices.get(index) else {
+            return None;
+        };
+        let slice = match self.syllable_indices.get(index + 1) {
+            Some(&jamo_end_index) => &self.jamos[jamo_start_index..jamo_end_index],
+            None => &self.jamos[jamo_start_index..],
+        };
+        compose_hangul_jamos_to_syllable(slice.iter().cloned())
     }
 }
 
@@ -59,9 +75,26 @@ impl Iterator for JamoStream {
         } else {
             self.jamos.get(self.index - 1).cloned()
         };
-        let next = self.jamos.get(self.index + 1).cloned();
+        let (next, next_syllable) = match self.jamos.get(self.index + 1) {
+            Some(&next) => {
+                let next_syllable = self.get_syllable_at(self.syllable_index + 1);
+                if let Some(ModernJamo::InitialConsonant(_)) = ModernJamo::try_from_char(next) {
+                    self.syllable_index += 1;
+                }
+                (Some(next), next_syllable)
+            }
+            None => {
+                self.syllable_index += 1;
+                (None, None)
+            }
+        };
         self.index += 1;
-        Some(JamoInStream { curr, prev, next })
+        Some(JamoInStream {
+            curr,
+            prev,
+            next,
+            next_syllable,
+        })
     }
 }
 
@@ -114,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_it_works() {
-        let mut stream = JamoStream::from_hangul_syllables("밥");
+        let mut stream = JamoStream::from_hangul_syllables("밥이");
 
         assert_eq!(
             stream.next().unwrap(),
@@ -122,6 +155,7 @@ mod tests {
                 prev: None,
                 curr: 'ᄇ',
                 next: Some('ᅡ'),
+                next_syllable: Some('이')
             }
         );
 
@@ -131,6 +165,7 @@ mod tests {
                 prev: Some('ᄇ'),
                 curr: 'ᅡ',
                 next: Some('ᆸ'),
+                next_syllable: Some('이')
             }
         );
 
@@ -139,7 +174,28 @@ mod tests {
             JamoInStream {
                 prev: Some('ᅡ'),
                 curr: 'ᆸ',
+                next: Some('ᄋ'),
+                next_syllable: Some('이')
+            }
+        );
+
+        assert_eq!(
+            stream.next().unwrap(),
+            JamoInStream {
+                prev: Some('ᆸ'),
+                curr: 'ᄋ',
+                next: Some('ᅵ'),
+                next_syllable: None
+            }
+        );
+
+        assert_eq!(
+            stream.next().unwrap(),
+            JamoInStream {
+                prev: Some('ᄋ'),
+                curr: 'ᅵ',
                 next: None,
+                next_syllable: None
             }
         );
 
