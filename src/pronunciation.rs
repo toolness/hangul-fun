@@ -7,8 +7,6 @@ use crate::jamo_stream::{JamoInStream, JamoStream, ModernJamo};
 /// Many of these hints are taken from the book "Hangeul
 /// Master" by Talk to Me in Korean.
 pub fn get_jamo_pronunciation(jamo: &JamoInStream) -> &'static str {
-    // TODO: Support compound final consonants
-    // TODO: Support linking sounds??
     match jamo.curr {
         // Initial, some finals
         'ᄀ' => "'g' as in 'go', not as in 'giraffe'",
