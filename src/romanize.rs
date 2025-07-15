@@ -6,22 +6,11 @@ fn get_final_with_no_next_vowel(ch: char) -> Option<&'static str> {
         // Final
         'ᆨ' => Some("k"),
         'ᆩ' => Some("k"),
-        'ᆪ' => Some("k"), // Suggested by Claude, could be wrong
         'ᆫ' => Some("n"),
-        'ᆬ' => Some("n"), // Suggested by Claude, could be wrong
-        'ᆭ' => Some("n"), // Suggested by Claude, could be wrong
         'ᆮ' => Some("t"),
         'ᆯ' => Some("l"),
-        'ᆰ' => Some("k?"), // Suggested by Claude, which also says it "mostly" sounds like this??
-        'ᆱ' => Some("m"),  // Suggested by Claude, could be wrong
-        'ᆲ' => Some("l?"), // Claude says this is "p" in some words, though
-        'ᆳ' => Some("l"),  // Suggested by Claude, could be wrong
-        'ᆴ' => Some("l"),  // Suggested by Claude, could be wrong
-        'ᆵ' => Some("p"),  // Suggested by Claude, could be wrong
-        'ᆶ' => Some("l"),  // Suggested by Claude, could be wrong
         'ᆷ' => Some("m"),
         'ᆸ' => Some("p"),
-        'ᆹ' => Some("p"), // Suggested by Claude, could be wrong
         'ᆺ' => Some("t"),
         'ᆻ' => Some("t"),
         'ᆼ' => Some("ng"),
@@ -41,22 +30,11 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
         // Final
         'ᆨ' => Some("g"),
         'ᆩ' => Some("kk"),
-        'ᆪ' => Some("gs"), // Claude says both consonants are pronounced?
         'ᆫ' => Some("n"),
-        'ᆬ' => Some("nj"), // Claude says both consonants are pronounced?
-        'ᆭ' => Some("nh"), // Claude says both consonants are pronounced?
         'ᆮ' => Some("d"),
         'ᆯ' => Some("l"),
-        'ᆰ' => Some("lg"), // Claude says both consonants are pronounced?
-        'ᆱ' => Some("lm"), // Claude says both consonants are pronounced?
-        'ᆲ' => Some("lb"), // Claude says both consonants are pronounced?
-        'ᆳ' => Some("ls"), // Claude says both consonants are pronounced?
-        'ᆴ' => Some("lt"), // Claude says both consonants are pronounced?
-        'ᆵ' => Some("lp"), // Claude says both consonants are pronounced?
-        'ᆶ' => Some("lh"), // Claude says both consonants are pronounced?
         'ᆷ' => Some("m"),
         'ᆸ' => Some("b"),
-        'ᆹ' => Some("bs"), // Claude says both consonants are pronounced?
         'ᆺ' => Some("s"),
         'ᆻ' => Some("ss"),
         'ᆼ' => Some("ng"),
@@ -75,6 +53,11 @@ fn get_final_with_next_vowel(ch: char) -> Option<&'static str> {
 /// `is_next_vowel` represents whether the syllable
 /// following the final consonant of this syllable is
 /// a vowel.
+///
+/// Note that compound consonants are unsupported;
+/// pronunciation rules should first process the
+/// jamos, which will convert compound consonants
+/// to standard jamos.
 pub fn get_romanized_jamo(jamo: &JamoInStream) -> Option<&'static str> {
     match jamo.curr {
         // Initial
