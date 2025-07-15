@@ -88,7 +88,7 @@ fn apply_compound_consonant_rules(
     }
 }
 
-fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
+pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
     let mut skip_next_initial_consonant = false;
     for jamo in JamoStream::from_jamos(value) {

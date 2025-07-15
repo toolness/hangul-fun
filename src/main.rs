@@ -6,6 +6,7 @@ use crate::{
         HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
         hangul_jamo_to_compat_with_fallback,
     },
+    pronunciation::apply_pronunciation_rules_to_jamos,
     romanize::romanize_decomposed_hangul,
 };
 
@@ -29,6 +30,11 @@ enum Commands {
     /// Decode a string
     Decode {
         /// The string to decode
+        string: String,
+    },
+    /// Show pronunciation information for a string
+    Say {
+        /// The string to display pronunciation information for
         string: String,
     },
     /// Play a file
@@ -83,6 +89,18 @@ fn main() -> Result<()> {
                 decomposed.len()
             );
             println!("romanized: {}", romanize_decomposed_hangul(&decomposed));
+        }
+        Commands::Say { string } => {
+            let decomposed = decompose_all_hangul_syllables(&string);
+            println!(
+                "original   : {decomposed}  romanized: {}",
+                romanize_decomposed_hangul(&decomposed)
+            );
+            let pronounced = apply_pronunciation_rules_to_jamos(&decomposed);
+            println!(
+                "pronounced : {pronounced}  romanized: {}",
+                romanize_decomposed_hangul(&pronounced)
+            );
         }
         Commands::Play {
             filename,
