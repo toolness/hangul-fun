@@ -79,6 +79,8 @@ fn apply_compound_consonant_rules(
     match (final_consonant, next_initial_consonant) {
         // Rules for ㄳ
         (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
+            // Note: I have no idea why the ㅅ is becoming tensed into
+            // ㅆ here. The Hangeul Master book doesn't explain it.
             (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄊ')))
         }
         (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
@@ -100,6 +102,15 @@ fn apply_compound_consonant_rules(
             (FinalConsonant('ᆫ'), Some(InitialConsonant('ᄎ')))
         }
         (FinalConsonant('ᆭ'), _) => (FinalConsonant('ᆫ'), next_initial_consonant),
+
+        // Rules for ㄺ
+        (FinalConsonant('ᆰ'), Some(InitialConsonant('ᄋ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄀ')))
+        }
+        (FinalConsonant('ᆰ'), Some(InitialConsonant('ᄀ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄁ')))
+        }
+        (FinalConsonant('ᆰ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
 
         // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
