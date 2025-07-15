@@ -77,10 +77,18 @@ fn apply_compound_consonant_rules(
 ) -> (ModernJamo, Option<ModernJamo>) {
     use ModernJamo::*;
     match (final_consonant, next_initial_consonant) {
+        // Rules for ᆪ
         (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
             (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄊ')))
         }
         (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
+
+        // Rules for ᆬ
+        (FinalConsonant('ᆬ'), Some(InitialConsonant('ᄋ'))) => {
+            (FinalConsonant('ᆫ'), Some(InitialConsonant('ᄌ')))
+        }
+        (FinalConsonant('ᆬ'), _) => (FinalConsonant('ᆫ'), next_initial_consonant),
+
         // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
     }
