@@ -133,6 +133,12 @@ fn apply_compound_consonant_rules(
         }
         (FinalConsonant('ᆴ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
 
+        // Rules for ㄽ
+        (FinalConsonant('ᆳ'), Some(InitialConsonant('ᄋ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄉ')))
+        }
+        (FinalConsonant('ᆳ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+
         // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
     }
