@@ -224,6 +224,42 @@ fn hangul_syllable_to_jamos(ch: char) -> Option<String> {
     }
 }
 
+fn is_initial_jamo(ch: char) -> bool {
+    match ch {
+        '\u{1100}'..'\u{115F}' => true,
+        _ => false,
+    }
+}
+
+/// Converts any Hangul jamos in the given string into Hangul syllables.
+pub fn compose_all_hangul_jamos<T: AsRef<str>>(value: T) -> String {
+    let str = value.as_ref();
+    let mut result = String::with_capacity(str.len() / 2);
+    let mut curr_syllable: Vec<char> = Vec::with_capacity(3);
+
+    fn push_curr_syllable(result: &mut String, curr_syllable: &mut Vec<char>) {
+        if let Some(syllable) = compose_hangul_jamos_to_syllable(curr_syllable.iter().cloned()) {
+            result.push(syllable);
+        }
+        curr_syllable.clear();
+    }
+
+    for ch in str.chars() {
+        if HangulCharClass::from(ch) == HangulCharClass::Jamo {
+            if is_initial_jamo(ch) {
+                push_curr_syllable(&mut result, &mut curr_syllable);
+            }
+            curr_syllable.push(ch);
+        } else {
+            push_curr_syllable(&mut result, &mut curr_syllable);
+            result.push(ch);
+        }
+    }
+    push_curr_syllable(&mut result, &mut curr_syllable);
+
+    result
+}
+
 /// Converts any Hangul syllables in the given string into
 /// Hangul jamos.
 pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
@@ -244,8 +280,8 @@ pub fn decompose_all_hangul_syllables<T: AsRef<str>>(value: T) -> String {
 #[cfg(test)]
 mod test {
     use crate::hangul::{
-        HangulCharClass, compose_hangul_jamos_to_syllable, decompose_all_hangul_syllables,
-        decompose_hangul_syllable_to_jamos,
+        HangulCharClass, compose_all_hangul_jamos, compose_hangul_jamos_to_syllable,
+        decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
     };
 
     #[test]
@@ -303,6 +339,20 @@ mod test {
         let decomposed = "이";
         assert_eq!(decomposed.chars().count(), 2);
         assert_eq!(decompose_all_hangul_syllables(&orig), decomposed.to_owned());
+    }
+
+    #[test]
+    fn test_compose_all_works() {
+        let decomposed = "이";
+        assert_eq!(decomposed.chars().count(), 2);
+        let composed = "이";
+        assert_eq!(composed.chars().count(), 1);
+        assert_eq!(compose_all_hangul_jamos(decomposed), composed.to_owned());
+
+        assert_eq!(
+            compose_all_hangul_jamos("hi 넋을인 there"),
+            "hi 넋을인 there".to_owned()
+        );
     }
 
     #[test]
