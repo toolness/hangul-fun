@@ -12,6 +12,7 @@ use crossterm::{
 };
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
+    borrow::Cow,
     fs::{File, read_to_string},
     io::{BufReader, Stdout, Write, stdout},
     path::{Path, PathBuf},
@@ -102,7 +103,7 @@ impl App {
             for (class, word) in HangulCharClass::split(&line) {
                 if class == HangulCharClass::Syllables {
                     if word_idx == self.curr_word {
-                        return Selection::new(word, self.curr_syllable);
+                        return Selection::new(Cow::Borrowed(word), self.curr_syllable);
                     }
                     word_idx += 1;
                 }
@@ -234,15 +235,15 @@ impl App {
             let mut clear_extra_lines = 0;
             self.render_horizontal_line(stdout)?;
             stdout.queue(Print("Selected word: "))?;
-            stdout.queue(Print(selection.word))?;
-            let decomposed = decompose_all_hangul_syllables(selection.word);
+            stdout.queue(Print(&selection.word))?;
+            let decomposed = decompose_all_hangul_syllables(&selection.word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
 
             stdout.queue(Print(format!("Selected syllable: ")))?;
-            stdout.queue(Print(selection.syllable_str))?;
+            stdout.queue(Print(selection.syllable_str()))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
             let initial_ch = selection.initial_jamo.curr;
@@ -392,15 +393,16 @@ impl App {
 }
 
 struct Selection<'a> {
-    word: &'a str,
-    syllable_str: &'a str,
+    word: Cow<'a, str>,
+    syllable_idx: usize,
+    syllable: char,
     initial_jamo: JamoInStream,
     medial_jamo: JamoInStream,
     final_jamo: Option<JamoInStream>,
 }
 
 impl<'a> Selection<'a> {
-    fn new(word: &'a str, syllable: usize) -> Option<Self> {
+    fn new(word: Cow<'a, str>, syllable: usize) -> Option<Self> {
         let mut syllable_idx = 0;
         for (idx, char) in word.char_indices() {
             if syllable_idx == syllable {
@@ -415,7 +417,8 @@ impl<'a> Selection<'a> {
                 };
                 return Some(Selection {
                     word,
-                    syllable_str: &word[idx..idx + char.len_utf8()],
+                    syllable: char,
+                    syllable_idx: idx,
                     initial_jamo,
                     medial_jamo,
                     final_jamo,
@@ -424,6 +427,10 @@ impl<'a> Selection<'a> {
             syllable_idx += 1;
         }
         None
+    }
+
+    fn syllable_str(&self) -> &str {
+        &self.word[self.syllable_idx..self.syllable_idx + self.syllable.len_utf8()]
     }
 }
 
