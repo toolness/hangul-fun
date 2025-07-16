@@ -102,28 +102,7 @@ impl App {
             for (class, word) in HangulCharClass::split(&line) {
                 if class == HangulCharClass::Syllables {
                     if word_idx == self.curr_word {
-                        let mut syllable_idx = 0;
-                        for (idx, char) in word.char_indices() {
-                            if syllable_idx == self.curr_syllable {
-                                let mut jamo_stream = JamoStream::from_hangul_syllables(&word);
-                                jamo_stream.seek_to_syllable(syllable_idx);
-                                let initial_jamo = jamo_stream.next().unwrap();
-                                let medial_jamo = jamo_stream.next().unwrap();
-                                let final_jamo = if count_jamos_in_syllable(char) == 3 {
-                                    jamo_stream.next()
-                                } else {
-                                    None
-                                };
-                                return Some(Selection {
-                                    word,
-                                    syllable_str: &word[idx..idx + char.len_utf8()],
-                                    initial_jamo,
-                                    medial_jamo,
-                                    final_jamo,
-                                });
-                            }
-                            syllable_idx += 1;
-                        }
+                        return Selection::new(word, self.curr_syllable);
                     }
                     word_idx += 1;
                 }
@@ -418,6 +397,34 @@ struct Selection<'a> {
     initial_jamo: JamoInStream,
     medial_jamo: JamoInStream,
     final_jamo: Option<JamoInStream>,
+}
+
+impl<'a> Selection<'a> {
+    fn new(word: &'a str, syllable: usize) -> Option<Self> {
+        let mut syllable_idx = 0;
+        for (idx, char) in word.char_indices() {
+            if syllable_idx == syllable {
+                let mut jamo_stream = JamoStream::from_hangul_syllables(&word);
+                jamo_stream.seek_to_syllable(syllable_idx);
+                let initial_jamo = jamo_stream.next().unwrap();
+                let medial_jamo = jamo_stream.next().unwrap();
+                let final_jamo = if count_jamos_in_syllable(char) == 3 {
+                    jamo_stream.next()
+                } else {
+                    None
+                };
+                return Some(Selection {
+                    word,
+                    syllable_str: &word[idx..idx + char.len_utf8()],
+                    initial_jamo,
+                    medial_jamo,
+                    final_jamo,
+                });
+            }
+            syllable_idx += 1;
+        }
+        None
+    }
 }
 
 fn key(code: KeyCode) -> Event {
