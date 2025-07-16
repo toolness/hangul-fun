@@ -162,6 +162,14 @@ fn apply_compound_consonant_rules(
         }
         (FinalConsonant('ᆶ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
 
+        // Rules for ㅄ
+        (FinalConsonant('ᆹ'), Some(InitialConsonant('ᄋ'))) => {
+            // Similar to situations above, the initial consonant is somehow
+            // intensified via a rule the book isn't explaining.
+            (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄊ')))
+        }
+        (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
+
         // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
     }
