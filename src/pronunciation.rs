@@ -150,6 +150,18 @@ fn apply_compound_consonant_rules(
         }
         (FinalConsonant('ᆵ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
 
+        // Rules for ㅀ
+        (FinalConsonant('ᆶ'), Some(InitialConsonant('ᄀ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄏ')))
+        }
+        (FinalConsonant('ᆶ'), Some(InitialConsonant('ᄃ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄐ')))
+        }
+        (FinalConsonant('ᆶ'), Some(InitialConsonant('ᄌ'))) => {
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄎ')))
+        }
+        (FinalConsonant('ᆶ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+
         // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
     }
