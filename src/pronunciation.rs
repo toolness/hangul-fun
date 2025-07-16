@@ -65,17 +65,33 @@ pub fn get_jamo_pronunciation(jamo: &JamoInStream) -> &'static str {
     }
 }
 
+struct RuleContext {
+    /// The final consonant of one syllable.
+    final_consonant: ModernJamo,
+    /// The initial consonant of the next syllable.
+    next_initial_consonant: Option<ModernJamo>,
+}
+
+impl RuleContext {
+    fn consonants(&self) -> (ModernJamo, Option<ModernJamo>) {
+        (self.final_consonant, self.next_initial_consonant)
+    }
+}
+
+/// Encapsulates a Hangul pronunciation rule that, given a context,
+/// returns the new final consonant and next initial consonant (which
+/// may be the same as the original, if the rule doesn't apply).
+type PronunciationRule = fn(&RuleContext) -> (ModernJamo, Option<ModernJamo>);
+
 /// Compound consonant rules are defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 57-59.
 ///
 /// Takes a final consonant and the next initial consonant after it
 /// and returns the effective new final consonant and next initial
 /// one.
-fn apply_compound_consonant_rules(
-    final_consonant: ModernJamo,
-    next_initial_consonant: Option<ModernJamo>,
-) -> (ModernJamo, Option<ModernJamo>) {
+fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>) {
     use ModernJamo::*;
+    let (final_consonant, next_initial_consonant) = ctx.consonants();
     match (final_consonant, next_initial_consonant) {
         // Rules for ㄳ
         (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
@@ -170,9 +186,13 @@ fn apply_compound_consonant_rules(
         }
         (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
 
-        _ => (final_consonant, next_initial_consonant),
+        _ => ctx.consonants(),
     }
 }
+
+/// All pronunciation rules required for Hangul, in the order that they
+/// should be applied.
+const PRONUNCIATION_RULES: [PronunciationRule; 1] = [compound_consonant_rule];
 
 pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
@@ -190,14 +210,22 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                 result.push(ch);
             }
             Some(ModernJamo::FinalConsonant(ch)) => {
-                let (final_consonant, next_initial_consonant) = apply_compound_consonant_rules(
-                    ModernJamo::FinalConsonant(ch),
-                    jamo.next
+                let mut ctx = RuleContext {
+                    final_consonant: ModernJamo::FinalConsonant(ch),
+                    next_initial_consonant: jamo
+                        .next
                         .map(|char| ModernJamo::try_from_char(char))
                         .flatten(),
-                );
-                result.push(final_consonant.into());
-                if let Some(next_initial_consonant) = next_initial_consonant {
+                };
+                for rule in PRONUNCIATION_RULES {
+                    let (final_consonant, next_initial_consonant) = rule(&ctx);
+                    ctx = RuleContext {
+                        final_consonant,
+                        next_initial_consonant,
+                    };
+                }
+                result.push(ctx.final_consonant.into());
+                if let Some(next_initial_consonant) = ctx.next_initial_consonant {
                     result.push(next_initial_consonant.into());
                     skip_next_initial_consonant = true;
                 }

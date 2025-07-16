@@ -106,7 +106,7 @@ impl Iterator for JamoStream {
  *
  * https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)
  */
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ModernJamo {
     InitialConsonant(char),
     Vowel(char),
