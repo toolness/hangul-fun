@@ -170,7 +170,6 @@ fn apply_compound_consonant_rules(
         }
         (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
 
-        // TODO: Add the rest of them.
         _ => (final_consonant, next_initial_consonant),
     }
 }
