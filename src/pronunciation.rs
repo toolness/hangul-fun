@@ -123,6 +123,9 @@ fn apply_compound_consonant_rules(
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄇ')))
         }
         (FinalConsonant('ᆲ'), Some(InitialConsonant('ᄃ'))) => {
+            // I think this exception is supposed to map the initial consonant
+            // to ㄷ, and some weird rule the book isn't explaining intensifies
+            // it.
             (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄄ')))
         }
         (FinalConsonant('ᆲ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
@@ -135,7 +138,9 @@ fn apply_compound_consonant_rules(
 
         // Rules for ㄽ
         (FinalConsonant('ᆳ'), Some(InitialConsonant('ᄋ'))) => {
-            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄉ')))
+            // Similar to situations above, the initial consonant is somehow
+            // intensified via a rule the book isn't explaining.
+            (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄊ')))
         }
         (FinalConsonant('ᆳ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
 
