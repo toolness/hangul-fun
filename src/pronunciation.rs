@@ -102,8 +102,7 @@ type PronunciationRule = fn(&RuleContext) -> RuleResult;
 ///
 /// https://www.missellykorean.com/korean-sound-change-rules-pdf/
 fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
-    let (final_consonant, next_initial_consonant) = ctx.consonants();
-    match (final_consonant, next_initial_consonant) {
+    match ctx.consonants() {
         (FinalConsonant(ch), Some(InitialConsonant('ᄋ'))) => {
             let new_initial = match ch {
                 'ᆨ' => 'ᄀ',
