@@ -1,4 +1,5 @@
 use crate::jamo_stream::{JamoInStream, JamoStream, ModernJamo};
+use ModernJamo::*;
 
 /// Return advice on the pronunciation of the given jamo.
 ///
@@ -78,10 +79,56 @@ impl RuleContext {
     }
 }
 
-/// Encapsulates a Hangul pronunciation rule that, given a context,
-/// returns the new final consonant and next initial consonant (which
-/// may be the same as the original, if the rule doesn't apply).
-type PronunciationRule = fn(&RuleContext) -> (ModernJamo, Option<ModernJamo>);
+enum RuleResult {
+    /// The rule doesn't apply to the given context.
+    NoChange,
+    /// The final consonant of the current syllable should be changed.
+    ChangeFinal(ModernJamo),
+    /// The final consonant of the current syllable should be removed.
+    RemoveFinal,
+    /// Both the final consonant of the current syllable and the initial
+    /// consonant of the next one should be changed.
+    ChangeBoth(ModernJamo, ModernJamo),
+    /// The final consonant of the current syllable should be removed,
+    /// and the initial consonant of the next syllable should be
+    /// changed.
+    RemoveFinalAndChangeInitial(ModernJamo),
+}
+
+/// Encapsulates a Hangul pronunciation rule.
+type PronunciationRule = fn(&RuleContext) -> RuleResult;
+
+/// Re-syllabification rule as described here:
+///
+/// https://www.missellykorean.com/korean-sound-change-rules-pdf/
+fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
+    let (final_consonant, next_initial_consonant) = ctx.consonants();
+    match (final_consonant, next_initial_consonant) {
+        (FinalConsonant(ch), Some(InitialConsonant('ᄋ'))) => {
+            let new_initial = match ch {
+                'ᆨ' => 'ᄀ',
+                'ᆩ' => 'ᄁ',
+                'ᆫ' => 'ᄂ',
+                'ᆮ' => 'ᄃ',
+                'ᆯ' => 'ᄅ',
+                'ᆷ' => 'ᄆ',
+                'ᆸ' => 'ᄇ',
+                'ᆺ' => 'ᄉ',
+                'ᆻ' => 'ᄊ',
+                'ᆼ' => return RuleResult::NoChange,
+                'ᆽ' => 'ᄌ',
+                'ᆾ' => 'ᄎ',
+                'ᆿ' => 'ᄏ',
+                'ᇀ' => 'ᄐ',
+                'ᇁ' => 'ᄑ',
+                'ᇂ' => return RuleResult::RemoveFinal,
+                _ => return RuleResult::NoChange,
+            };
+            RuleResult::RemoveFinalAndChangeInitial(ModernJamo::InitialConsonant(new_initial))
+        }
+        _ => RuleResult::NoChange,
+    }
+}
 
 /// Compound consonant rules are defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 57-59.
@@ -89,23 +136,22 @@ type PronunciationRule = fn(&RuleContext) -> (ModernJamo, Option<ModernJamo>);
 /// Takes a final consonant and the next initial consonant after it
 /// and returns the effective new final consonant and next initial
 /// one.
-fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>) {
-    use ModernJamo::*;
-    let (final_consonant, next_initial_consonant) = ctx.consonants();
-    match (final_consonant, next_initial_consonant) {
+fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
+    let orig_next_initial = ctx.next_initial_consonant;
+    let (new_final, new_next_initial) = match ctx.consonants() {
         // Rules for ㄳ
         (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
             // Note: I have no idea why the ㅅ is becoming tensed into
             // ㅆ here. The Hangeul Master book doesn't explain it.
             (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄊ')))
         }
-        (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
+        (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), orig_next_initial),
 
         // Rules for ㄵ
         (FinalConsonant('ᆬ'), Some(InitialConsonant('ᄋ'))) => {
             (FinalConsonant('ᆫ'), Some(InitialConsonant('ᄌ')))
         }
-        (FinalConsonant('ᆬ'), _) => (FinalConsonant('ᆫ'), next_initial_consonant),
+        (FinalConsonant('ᆬ'), _) => (FinalConsonant('ᆫ'), orig_next_initial),
 
         // Rules for ㄶ
         (FinalConsonant('ᆭ'), Some(InitialConsonant('ᄀ'))) => {
@@ -117,7 +163,7 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
         (FinalConsonant('ᆭ'), Some(InitialConsonant('ᄌ'))) => {
             (FinalConsonant('ᆫ'), Some(InitialConsonant('ᄎ')))
         }
-        (FinalConsonant('ᆭ'), _) => (FinalConsonant('ᆫ'), next_initial_consonant),
+        (FinalConsonant('ᆭ'), _) => (FinalConsonant('ᆫ'), orig_next_initial),
 
         // Rules for ㄺ
         (FinalConsonant('ᆰ'), Some(InitialConsonant('ᄋ'))) => {
@@ -126,13 +172,13 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
         (FinalConsonant('ᆰ'), Some(InitialConsonant('ᄀ'))) => {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄁ')))
         }
-        (FinalConsonant('ᆰ'), _) => (FinalConsonant('ᆨ'), next_initial_consonant),
+        (FinalConsonant('ᆰ'), _) => (FinalConsonant('ᆨ'), orig_next_initial),
 
         // Rules for ㄻ
         (FinalConsonant('ᆱ'), Some(InitialConsonant('ᄋ'))) => {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄆ')))
         }
-        (FinalConsonant('ᆱ'), _) => (FinalConsonant('ᆷ'), next_initial_consonant),
+        (FinalConsonant('ᆱ'), _) => (FinalConsonant('ᆷ'), orig_next_initial),
 
         // Rules for ㄼ
         (FinalConsonant('ᆲ'), Some(InitialConsonant('ᄋ'))) => {
@@ -144,13 +190,13 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
             // it.
             (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄄ')))
         }
-        (FinalConsonant('ᆲ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+        (FinalConsonant('ᆲ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
 
         // Rules for ㄾ
         (FinalConsonant('ᆴ'), Some(InitialConsonant('ᄋ'))) => {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄐ')))
         }
-        (FinalConsonant('ᆴ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+        (FinalConsonant('ᆴ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
 
         // Rules for ㄽ
         (FinalConsonant('ᆳ'), Some(InitialConsonant('ᄋ'))) => {
@@ -158,13 +204,13 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
             // intensified via a rule the book isn't explaining.
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄊ')))
         }
-        (FinalConsonant('ᆳ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+        (FinalConsonant('ᆳ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
 
         // Rules for ㄿ
         (FinalConsonant('ᆵ'), Some(InitialConsonant('ᄋ'))) => {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄑ')))
         }
-        (FinalConsonant('ᆵ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
+        (FinalConsonant('ᆵ'), _) => (FinalConsonant('ᆸ'), orig_next_initial),
 
         // Rules for ㅀ
         (FinalConsonant('ᆶ'), Some(InitialConsonant('ᄀ'))) => {
@@ -176,7 +222,7 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
         (FinalConsonant('ᆶ'), Some(InitialConsonant('ᄌ'))) => {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄎ')))
         }
-        (FinalConsonant('ᆶ'), _) => (FinalConsonant('ᆯ'), next_initial_consonant),
+        (FinalConsonant('ᆶ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
 
         // Rules for ㅄ
         (FinalConsonant('ᆹ'), Some(InitialConsonant('ᄋ'))) => {
@@ -184,15 +230,28 @@ fn compound_consonant_rule(ctx: &RuleContext) -> (ModernJamo, Option<ModernJamo>
             // intensified via a rule the book isn't explaining.
             (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄊ')))
         }
-        (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), next_initial_consonant),
+        (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), orig_next_initial),
 
-        _ => ctx.consonants(),
+        _ => return RuleResult::NoChange,
+    };
+
+    // TODO: Change all of the above code to return RuleResult directly. It
+    // was written before the introduction of RuleResult and was easier to just
+    // add the below logic than fix everything, especially since I don't know if I'll
+    // stick with RuleResult in the long term.
+    if new_next_initial == orig_next_initial {
+        RuleResult::ChangeFinal(new_final)
+    } else if let Some(new_next_initial) = new_next_initial {
+        RuleResult::ChangeBoth(new_final, new_next_initial)
+    } else {
+        RuleResult::ChangeFinal(new_final)
     }
 }
 
 /// All pronunciation rules required for Hangul, in the order that they
 /// should be applied.
-const PRONUNCIATION_RULES: [PronunciationRule; 1] = [compound_consonant_rule];
+const PRONUNCIATION_RULES: [PronunciationRule; 2] =
+    [compound_consonant_rule, resyllabification_rule];
 
 pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
@@ -217,14 +276,32 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                         .map(|char| ModernJamo::try_from_char(char))
                         .flatten(),
                 };
+                let mut keep_final_consonant = true;
                 for rule in PRONUNCIATION_RULES {
-                    let (final_consonant, next_initial_consonant) = rule(&ctx);
-                    ctx = RuleContext {
-                        final_consonant,
-                        next_initial_consonant,
-                    };
+                    let result = rule(&ctx);
+                    match result {
+                        RuleResult::NoChange => {}
+                        RuleResult::ChangeFinal(final_consonant) => {
+                            ctx.final_consonant = final_consonant;
+                        }
+                        RuleResult::ChangeBoth(final_consonant, next_initial_consonant) => {
+                            ctx.final_consonant = final_consonant;
+                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                        }
+                        RuleResult::RemoveFinal => {
+                            keep_final_consonant = false;
+                            break;
+                        }
+                        RuleResult::RemoveFinalAndChangeInitial(next_initial_consonant) => {
+                            keep_final_consonant = false;
+                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                            break;
+                        }
+                    }
                 }
-                result.push(ctx.final_consonant.into());
+                if keep_final_consonant {
+                    result.push(ctx.final_consonant.into());
+                }
                 if let Some(next_initial_consonant) = ctx.next_initial_consonant {
                     result.push(next_initial_consonant.into());
                     skip_next_initial_consonant = true;
@@ -240,7 +317,19 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::pronunciation::apply_pronunciation_rules_to_jamos;
+    use crate::{
+        hangul::{compose_all_hangul_jamos, decompose_all_hangul_syllables},
+        pronunciation::apply_pronunciation_rules_to_jamos,
+    };
+
+    fn apply_syllables(value: &'static str) -> String {
+        let jamos = decompose_all_hangul_syllables(value);
+        compose_all_hangul_jamos(apply_pronunciation_rules_to_jamos(jamos))
+    }
+
+    fn test_pronounce(original: &'static str, pronounced: &'static str) {
+        assert_eq!(apply_syllables(original), pronounced.to_owned())
+    }
 
     #[test]
     fn test_compound_consonant_rules_work() {
@@ -248,5 +337,14 @@ mod tests {
             apply_pronunciation_rules_to_jamos("넋을"),
             "넉쓸".to_owned()
         );
+    }
+
+    #[test]
+    fn test_resyllibification_rules_work() {
+        test_pronounce("십오", "시보");
+        // Ensure ng does not carry over.
+        test_pronounce("생일", "생일");
+        // Ensure h is silent.
+        test_pronounce("좋아", "조아");
     }
 }
