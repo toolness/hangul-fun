@@ -21,12 +21,12 @@ use std::{
 
 use crate::{
     hangul::{
-        HangulCharClass, count_jamos_in_syllable, decompose_all_hangul_syllables,
-        hangul_jamo_to_compat_with_fallback,
+        HangulCharClass, compose_all_hangul_jamos, count_jamos_in_syllable,
+        decompose_all_hangul_syllables, hangul_jamo_to_compat_with_fallback,
     },
     jamo_stream::{JamoInStream, JamoStream},
     lrc::{Lyrics, parse_lrc},
-    pronunciation::get_jamo_pronunciation,
+    pronunciation::{apply_pronunciation_rules_to_jamos, get_jamo_pronunciation},
     romanize::{get_romanized_jamo, romanize_decomposed_hangul},
 };
 
@@ -97,13 +97,27 @@ impl App {
         Ok(())
     }
 
-    fn get_selection(&self) -> Option<Selection> {
+    fn get_selection(&self) -> Option<(Selection, Selection)> {
         if let Some((_, line)) = self.lyrics.get(self.curr_lyrics_line) {
             let mut word_idx = 0;
             for (class, word) in HangulCharClass::split(&line) {
                 if class == HangulCharClass::Syllables {
                     if word_idx == self.curr_word {
-                        return Selection::new(Cow::Borrowed(word), self.curr_syllable);
+                        let selection = Selection::new(Cow::Borrowed(word), self.curr_syllable);
+                        let pronounced_word =
+                            compose_all_hangul_jamos(apply_pronunciation_rules_to_jamos(
+                                decompose_all_hangul_syllables(&word),
+                            ));
+                        let pronounced_selection =
+                            Selection::new(Cow::Owned(pronounced_word), self.curr_syllable);
+
+                        if let (Some(selection), Some(pronounced_selection)) =
+                            (selection, pronounced_selection)
+                        {
+                            return Some((selection, pronounced_selection));
+                        } else {
+                            return None;
+                        }
                     }
                     word_idx += 1;
                 }
@@ -231,32 +245,36 @@ impl App {
     }
 
     fn render_selection_info(&self, stdout: &mut Stdout) -> Result<()> {
-        if let Some(selection) = self.get_selection() {
+        if let Some((original_selection, pronounced_selection)) = self.get_selection() {
             let mut clear_extra_lines = 0;
             self.render_horizontal_line(stdout)?;
             stdout.queue(Print("Selected word: "))?;
-            stdout.queue(Print(&selection.word))?;
-            let decomposed = decompose_all_hangul_syllables(&selection.word);
+            stdout.queue(Print(&original_selection.word))?;
+            if pronounced_selection.word != original_selection.word {
+                stdout.queue(Print(format!(" → {}", &pronounced_selection.word)))?;
+            }
+            let decomposed = decompose_all_hangul_syllables(&pronounced_selection.word);
             let romanized = romanize_decomposed_hangul(&decomposed);
             stdout.queue(Print(format!(" ({romanized})")))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
 
             stdout.queue(Print(format!("Selected syllable: ")))?;
-            stdout.queue(Print(selection.syllable_str()))?;
+            stdout.queue(Print(pronounced_selection.syllable_str()))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
-            let initial_ch = selection.initial_jamo.curr;
+            let initial_ch = pronounced_selection.initial_jamo.curr;
             let initial_compat = hangul_jamo_to_compat_with_fallback(initial_ch);
-            let mut initial_rom = get_romanized_jamo(&selection.initial_jamo).unwrap_or("?");
+            let mut initial_rom =
+                get_romanized_jamo(&pronounced_selection.initial_jamo).unwrap_or("?");
             if initial_rom == "" {
                 initial_rom = "silent";
             }
-            let initial_hint = get_jamo_pronunciation(&selection.initial_jamo);
-            let medial_ch = selection.medial_jamo.curr;
+            let initial_hint = get_jamo_pronunciation(&pronounced_selection.initial_jamo);
+            let medial_ch = pronounced_selection.medial_jamo.curr;
             let medial_compat = hangul_jamo_to_compat_with_fallback(medial_ch);
-            let medial_rom = get_romanized_jamo(&selection.medial_jamo).unwrap_or("?");
-            let medial_hint = get_jamo_pronunciation(&selection.medial_jamo);
+            let medial_rom = get_romanized_jamo(&pronounced_selection.medial_jamo).unwrap_or("?");
+            let medial_hint = get_jamo_pronunciation(&pronounced_selection.medial_jamo);
             stdout.queue(Print(format!(
                 "  Initial: {initial_compat} ({initial_rom}) {initial_hint}"
             )))?;
@@ -267,7 +285,7 @@ impl App {
             )))?;
             stdout.queue(Clear(ClearType::UntilNewLine))?;
             stdout.queue(MoveToNextLine(1))?;
-            if let Some(final_jamo) = selection.final_jamo {
+            if let Some(final_jamo) = pronounced_selection.final_jamo {
                 let final_ch = final_jamo.curr;
                 let final_compat = hangul_jamo_to_compat_with_fallback(final_ch);
                 let final_rom = get_romanized_jamo(&final_jamo).unwrap_or("?");
