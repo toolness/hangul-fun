@@ -92,7 +92,7 @@ enum RuleResult {
     /// The final consonant of the current syllable should be removed,
     /// and the initial consonant of the next syllable should be
     /// changed.
-    RemoveFinalAndChangeInitial(ModernJamo),
+    RemoveFinalAndChangeNextInitial(ModernJamo),
 }
 
 /// Encapsulates a Hangul pronunciation rule.
@@ -124,7 +124,7 @@ fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
                 'ᇂ' => return RuleResult::RemoveFinal,
                 _ => return RuleResult::NoChange,
             };
-            RuleResult::RemoveFinalAndChangeInitial(ModernJamo::InitialConsonant(new_initial))
+            RuleResult::RemoveFinalAndChangeNextInitial(ModernJamo::InitialConsonant(new_initial))
         }
         _ => RuleResult::NoChange,
     }
@@ -292,7 +292,7 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                             keep_final_consonant = false;
                             break;
                         }
-                        RuleResult::RemoveFinalAndChangeInitial(next_initial_consonant) => {
+                        RuleResult::RemoveFinalAndChangeNextInitial(next_initial_consonant) => {
                             keep_final_consonant = false;
                             ctx.next_initial_consonant = Some(next_initial_consonant);
                             break;
