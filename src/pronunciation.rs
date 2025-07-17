@@ -82,13 +82,15 @@ impl RuleContext {
 enum RuleResult {
     /// The rule doesn't apply to the given context.
     NoChange,
+    /// The initial consonant of the next syllable should be changed.
+    ChangeNextInitial(ModernJamo),
     /// The final consonant of the current syllable should be changed.
     ChangeFinal(ModernJamo),
-    /// The final consonant of the current syllable should be removed.
-    RemoveFinal,
     /// Both the final consonant of the current syllable and the initial
     /// consonant of the next one should be changed.
     ChangeBoth(ModernJamo, ModernJamo),
+    /// The final consonant of the current syllable should be removed.
+    RemoveFinal,
     /// The final consonant of the current syllable should be removed,
     /// and the initial consonant of the next syllable should be
     /// changed.
@@ -97,6 +99,37 @@ enum RuleResult {
 
 /// Encapsulates a Hangul pronunciation rule.
 type PronunciationRule = fn(&RuleContext) -> RuleResult;
+
+/// Reinforcement/intensification rule as described here:
+///
+/// https://www.missellykorean.com/korean-sound-change-rules-pdf/
+fn reinforcement_rule(ctx: &RuleContext) -> RuleResult {
+    match ctx.consonants() {
+        (
+            // Note: it's very confusing which final consonants work
+            // here, the instructions have conflicting information.
+            FinalConsonant('ᆸ' | 'ᆨ' | 'ᆿ' | 'ᆮ' | 'ᆺ' | 'ᆽ' | 'ᆾ' | 'ᇀ'),
+            Some(InitialConsonant(initial)),
+        ) => {
+            let strengthened = match initial {
+                'ᄀ' => 'ᄁ',
+                'ᄃ' => 'ᄄ',
+                'ᄇ' => 'ᄈ',
+                'ᄉ' => 'ᄊ',
+                'ᄌ' => 'ᄍ',
+                _ => return RuleResult::NoChange,
+            };
+            RuleResult::ChangeNextInitial(InitialConsonant(strengthened))
+        }
+        (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄉ'))) => {
+            // Note that the instructions only say to strengthen the initial
+            // consonant, but the example given _removes_ the final, so
+            // that's what I'll do here.
+            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄊ'))
+        }
+        _ => RuleResult::NoChange,
+    }
+}
 
 /// Re-syllabification rule as described here:
 ///
@@ -140,9 +173,7 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
     let (new_final, new_next_initial) = match ctx.consonants() {
         // Rules for ㄳ
         (FinalConsonant('ᆪ'), Some(InitialConsonant('ᄋ'))) => {
-            // Note: I have no idea why the ㅅ is becoming tensed into
-            // ㅆ here. The Hangeul Master book doesn't explain it.
-            (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄊ')))
+            (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄉ')))
         }
         (FinalConsonant('ᆪ'), _) => (FinalConsonant('ᆨ'), orig_next_initial),
 
@@ -184,10 +215,7 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄇ')))
         }
         (FinalConsonant('ᆲ'), Some(InitialConsonant('ᄃ'))) => {
-            // I think this exception is supposed to map the initial consonant
-            // to ㄷ, and some weird rule the book isn't explaining intensifies
-            // it.
-            (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄄ')))
+            (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄃ')))
         }
         (FinalConsonant('ᆲ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
 
@@ -199,8 +227,9 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
 
         // Rules for ㄽ
         (FinalConsonant('ᆳ'), Some(InitialConsonant('ᄋ'))) => {
-            // Similar to situations above, the initial consonant is somehow
-            // intensified via a rule the book isn't explaining.
+            // It's unclear whether the reinforcement rule applies here; since
+            // we don't currently match it on ᆯ, we'll do it here manually,
+            // because that's what the example in the book has.
             (FinalConsonant('ᆯ'), Some(InitialConsonant('ᄊ')))
         }
         (FinalConsonant('ᆳ'), _) => (FinalConsonant('ᆯ'), orig_next_initial),
@@ -225,9 +254,7 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
 
         // Rules for ㅄ
         (FinalConsonant('ᆹ'), Some(InitialConsonant('ᄋ'))) => {
-            // Similar to situations above, the initial consonant is somehow
-            // intensified via a rule the book isn't explaining.
-            (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄊ')))
+            (FinalConsonant('ᆸ'), Some(InitialConsonant('ᄉ')))
         }
         (FinalConsonant('ᆹ'), _) => (FinalConsonant('ᆸ'), orig_next_initial),
 
@@ -249,8 +276,11 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
 
 /// All pronunciation rules required for Hangul, in the order that they
 /// should be applied.
-const PRONUNCIATION_RULES: [PronunciationRule; 2] =
-    [compound_consonant_rule, resyllabification_rule];
+const PRONUNCIATION_RULES: [PronunciationRule; 3] = [
+    compound_consonant_rule,
+    resyllabification_rule,
+    reinforcement_rule,
+];
 
 pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
     let mut result = String::with_capacity(value.as_ref().len());
@@ -280,6 +310,9 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                     let result = rule(&ctx);
                     match result {
                         RuleResult::NoChange => {}
+                        RuleResult::ChangeNextInitial(next_initial_consonant) => {
+                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                        }
                         RuleResult::ChangeFinal(final_consonant) => {
                             ctx.final_consonant = final_consonant;
                         }
@@ -336,6 +369,15 @@ mod tests {
             apply_pronunciation_rules_to_jamos("넋을"),
             "넉쓸".to_owned()
         );
+    }
+
+    #[test]
+    fn test_reinforcement_rules_work() {
+        test_pronounce("학교", "학꾜");
+        test_pronounce("학생", "학쌩");
+        test_pronounce("잡지", "잡찌");
+        test_pronounce("먹다", "먹따");
+        test_pronounce("좋습니다", "조씁니다");
     }
 
     #[test]
