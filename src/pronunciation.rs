@@ -138,6 +138,9 @@ fn nasalization_rule(ctx: &RuleContext) -> RuleResult {
         (FinalConsonant('ᆨ' | 'ᆩ' | 'ᆿ'), Some(InitialConsonant('ᄂ'))) => {
             RuleResult::ChangeFinal(FinalConsonant('ᆼ'))
         }
+        (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄆ'))) => {
+            RuleResult::ChangeFinal(FinalConsonant('ᆼ'))
+        }
         // TODO: Implemment the other nasalization rules.
         _ => RuleResult::NoChange,
     }
@@ -387,6 +390,7 @@ mod tests {
     #[test]
     fn test_nasalization_rules_work() {
         test_pronounce("국내", "궁내");
+        test_pronounce("국물", "궁물");
     }
 
     #[test]
