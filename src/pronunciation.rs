@@ -159,8 +159,12 @@ fn nasalization_rule(ctx: &RuleContext) -> RuleResult {
         (FinalConsonant('ᆸ' | 'ᇁ'), Some(InitialConsonant('ᄂ' | 'ᄆ'))) => {
             RuleResult::ChangeFinal(FinalConsonant('ᆷ'))
         }
-
-        // TODO: Implemment the other nasalization rules.
+        (FinalConsonant('ᆫ'), Some(InitialConsonant('ᄅ'))) => {
+            RuleResult::ChangeFinal(FinalConsonant('ᆯ'))
+        }
+        (FinalConsonant('ᆼ' | 'ᆷ'), Some(InitialConsonant('ᄅ'))) => {
+            RuleResult::ChangeNextInitial(InitialConsonant('ᄂ'))
+        }
         _ => RuleResult::NoChange,
     }
 }
@@ -459,6 +463,9 @@ mod tests {
         test_pronounce("듣는", "든는");
         test_pronounce("있는", "인는");
         test_pronounce("업는", "엄는");
+        test_pronounce("난로", "날로");
+        test_pronounce("종로", "종노");
+        test_pronounce("함락", "함낙");
     }
 
     #[test]
