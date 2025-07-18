@@ -199,6 +199,8 @@ fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
 /// Additional re-syllabification rules defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 61-62.
 fn ttmik_resyllabification_rule(ctx: &RuleContext) -> RuleResult {
+    // Note that some rules from the book aren't listed here because
+    // they've already been covered by other rules.
     match ctx.consonants() {
         (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄀ'))) => {
             RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄏ'))
@@ -209,7 +211,6 @@ fn ttmik_resyllabification_rule(ctx: &RuleContext) -> RuleResult {
         (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄌ'))) => {
             RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄎ'))
         }
-        // TODO: Add the rest of the rules.
         _ => match (ctx.final_consonant, ctx.next_syllable) {
             (FinalConsonant('ᆮ'), Some('이')) => {
                 RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄌ'))
@@ -473,6 +474,8 @@ mod tests {
         test_pronounce("놓고", "노코");
         test_pronounce("좋다", "조타");
         test_pronounce("그렇지", "그러치");
+        test_pronounce("늫는", "는는");
+        test_pronounce("쌓은", "싸은");
         test_pronounce("곧이", "고지");
         test_pronounce("같이", "가치");
         test_pronounce("닫히", "다치");
