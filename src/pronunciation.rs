@@ -399,6 +399,7 @@ mod tests {
         test_pronounce("국내", "궁내");
         test_pronounce("국물", "궁물");
         test_pronounce("듣는", "든는");
+        test_pronounce("있는", "인는");
         test_pronounce("업는", "엄는");
     }
 
