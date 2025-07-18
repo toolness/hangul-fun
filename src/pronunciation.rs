@@ -199,15 +199,26 @@ fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
 /// Additional re-syllabification rules defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 61-62.
 fn ttmik_resyllabification_rule(ctx: &RuleContext) -> RuleResult {
-    // TODO: Add the rest of the rules.
-    match (ctx.final_consonant, ctx.next_syllable) {
-        (FinalConsonant('ᆮ'), Some('이')) => {
-            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄌ'))
+    match ctx.consonants() {
+        (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄀ'))) => {
+            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄏ'))
         }
-        (FinalConsonant('ᇀ'), Some('이')) | (FinalConsonant('ᆮ'), Some('히')) => {
+        (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄃ'))) => {
+            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄐ'))
+        }
+        (FinalConsonant('ᇂ'), Some(InitialConsonant('ᄌ'))) => {
             RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄎ'))
         }
-        _ => RuleResult::NoChange,
+        // TODO: Add the rest of the rules.
+        _ => match (ctx.final_consonant, ctx.next_syllable) {
+            (FinalConsonant('ᆮ'), Some('이')) => {
+                RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄌ'))
+            }
+            (FinalConsonant('ᇀ'), Some('이')) | (FinalConsonant('ᆮ'), Some('히')) => {
+                RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄎ'))
+            }
+            _ => RuleResult::NoChange,
+        },
     }
 }
 
@@ -459,6 +470,9 @@ mod tests {
 
     #[test]
     fn test_ttmik_resyllabification_rules_work() {
+        test_pronounce("놓고", "노코");
+        test_pronounce("좋다", "조타");
+        test_pronounce("그렇지", "그러치");
         test_pronounce("곧이", "고지");
         test_pronounce("같이", "가치");
         test_pronounce("닫히", "다치");
