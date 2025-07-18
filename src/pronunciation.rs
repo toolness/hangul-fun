@@ -370,6 +370,10 @@ mod tests {
         test_pronounce("않고", "안코");
         test_pronounce("않다", "안타");
         test_pronounce("않지", "안치");
+        test_pronounce("읽다", "익따");
+        // TODO: Uncomment this once we've implemented 익는 -> 잉는
+        //test_pronounce("읽는", "잉는");
+        test_pronounce("읽고", "일꼬");
     }
 
     #[test]
