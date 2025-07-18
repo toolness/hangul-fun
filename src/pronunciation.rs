@@ -1,4 +1,7 @@
-use crate::jamo_stream::{JamoInStream, JamoStream, ModernJamo};
+use crate::{
+    hangul::{compose_hangul_jamos_to_syllable, decompose_hangul_syllable_to_jamos},
+    jamo_stream::{JamoInStream, JamoStream, ModernJamo},
+};
 use ModernJamo::*;
 
 /// Return advice on the pronunciation of the given jamo.
@@ -71,11 +74,20 @@ struct RuleContext {
     final_consonant: ModernJamo,
     /// The initial consonant of the next syllable.
     next_initial_consonant: Option<ModernJamo>,
+    /// The next syllable.
+    next_syllable: Option<char>,
 }
 
 impl RuleContext {
     fn consonants(&self) -> (ModernJamo, Option<ModernJamo>) {
         (self.final_consonant, self.next_initial_consonant)
+    }
+
+    fn change_next_initial_consonant(&mut self, consonant: ModernJamo) {
+        self.next_initial_consonant = Some(consonant);
+        if let Some(next_syllable) = self.next_syllable {
+            self.next_syllable = change_initial_consonant(next_syllable, consonant.into());
+        }
     }
 }
 
@@ -323,6 +335,7 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                         .next
                         .map(|char| ModernJamo::try_from_char(char))
                         .flatten(),
+                    next_syllable: jamo.next_syllable,
                 };
                 let mut keep_final_consonant = true;
                 for rule in PRONUNCIATION_RULES {
@@ -330,14 +343,14 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                     match result {
                         RuleResult::NoChange => {}
                         RuleResult::ChangeNextInitial(next_initial_consonant) => {
-                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                            ctx.change_next_initial_consonant(next_initial_consonant);
                         }
                         RuleResult::ChangeFinal(final_consonant) => {
                             ctx.final_consonant = final_consonant;
                         }
                         RuleResult::ChangeBoth(final_consonant, next_initial_consonant) => {
                             ctx.final_consonant = final_consonant;
-                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                            ctx.change_next_initial_consonant(next_initial_consonant);
                         }
                         RuleResult::RemoveFinal => {
                             keep_final_consonant = false;
@@ -345,7 +358,7 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
                         }
                         RuleResult::RemoveFinalAndChangeNextInitial(next_initial_consonant) => {
                             keep_final_consonant = false;
-                            ctx.next_initial_consonant = Some(next_initial_consonant);
+                            ctx.change_next_initial_consonant(next_initial_consonant);
                             break;
                         }
                     }
@@ -366,11 +379,22 @@ pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
     result
 }
 
+fn change_initial_consonant(syllable: char, initial: char) -> Option<char> {
+    let Some((_initial, medial, maybe_final)) = decompose_hangul_syllable_to_jamos(syllable) else {
+        return None;
+    };
+    if let Some(final_consonant) = maybe_final {
+        compose_hangul_jamos_to_syllable([initial, medial, final_consonant].iter().cloned())
+    } else {
+        compose_hangul_jamos_to_syllable([initial, medial].iter().cloned())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
         hangul::{compose_all_hangul_jamos, decompose_all_hangul_syllables},
-        pronunciation::apply_pronunciation_rules_to_jamos,
+        pronunciation::{apply_pronunciation_rules_to_jamos, change_initial_consonant},
     };
 
     fn apply_syllables(value: &'static str) -> String {
@@ -380,6 +404,12 @@ mod tests {
 
     fn test_pronounce(original: &'static str, pronounced: &'static str) {
         assert_eq!(apply_syllables(original), pronounced.to_owned())
+    }
+
+    #[test]
+    fn test_change_initial_consonant() {
+        assert_eq!(change_initial_consonant('을', 'ᄂ'), Some('늘'));
+        assert_eq!(change_initial_consonant('이', 'ᄂ'), Some('니'));
     }
 
     #[test]
