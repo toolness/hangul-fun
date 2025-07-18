@@ -131,6 +131,18 @@ fn reinforcement_rule(ctx: &RuleContext) -> RuleResult {
     }
 }
 
+/// Nasalization rules are defined in Talk To Me in Korean's
+/// "Hangul Master" pg. 63.
+fn nasalization_rule(ctx: &RuleContext) -> RuleResult {
+    match ctx.consonants() {
+        (FinalConsonant('ᆨ' | 'ᆩ' | 'ᆿ'), Some(InitialConsonant('ᄂ'))) => {
+            RuleResult::ChangeFinal(FinalConsonant('ᆼ'))
+        }
+        // TODO: Implemment the other nasalization rules.
+        _ => RuleResult::NoChange,
+    }
+}
+
 /// Re-syllabification rule as described here:
 ///
 /// https://www.missellykorean.com/korean-sound-change-rules-pdf/
@@ -164,10 +176,6 @@ fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
 
 /// Compound consonant rules are defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 57-59.
-///
-/// Takes a final consonant and the next initial consonant after it
-/// and returns the effective new final consonant and next initial
-/// one.
 fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
     let orig_next_initial = ctx.next_initial_consonant;
     let (new_final, new_next_initial) = match ctx.consonants() {
@@ -276,10 +284,11 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
 
 /// All pronunciation rules required for Hangul, in the order that they
 /// should be applied.
-const PRONUNCIATION_RULES: [PronunciationRule; 3] = [
+const PRONUNCIATION_RULES: [PronunciationRule; 4] = [
     compound_consonant_rule,
     resyllabification_rule,
     reinforcement_rule,
+    nasalization_rule,
 ];
 
 pub fn apply_pronunciation_rules_to_jamos<T: AsRef<str>>(value: T) -> String {
@@ -371,9 +380,13 @@ mod tests {
         test_pronounce("않다", "안타");
         test_pronounce("않지", "안치");
         test_pronounce("읽다", "익따");
-        // TODO: Uncomment this once we've implemented 익는 -> 잉는
-        //test_pronounce("읽는", "잉는");
+        test_pronounce("읽는", "잉는");
         test_pronounce("읽고", "일꼬");
+    }
+
+    #[test]
+    fn test_nasalization_rules_work() {
+        test_pronounce("국내", "궁내");
     }
 
     #[test]
