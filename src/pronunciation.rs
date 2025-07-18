@@ -196,6 +196,21 @@ fn resyllabification_rule(ctx: &RuleContext) -> RuleResult {
     }
 }
 
+/// Additional re-syllabification rules defined in Talk To Me in Korean's
+/// "Hangul Master" pg. 61-62.
+fn ttmik_resyllabification_rule(ctx: &RuleContext) -> RuleResult {
+    // TODO: Add the rest of the rules.
+    match (ctx.final_consonant, ctx.next_syllable) {
+        (FinalConsonant('ᆮ'), Some('이')) => {
+            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄌ'))
+        }
+        (FinalConsonant('ᇀ'), Some('이')) | (FinalConsonant('ᆮ'), Some('히')) => {
+            RuleResult::RemoveFinalAndChangeNextInitial(InitialConsonant('ᄎ'))
+        }
+        _ => RuleResult::NoChange,
+    }
+}
+
 /// Compound consonant rules are defined in Talk To Me in Korean's
 /// "Hangul Master" pg. 57-59.
 fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
@@ -306,8 +321,9 @@ fn compound_consonant_rule(ctx: &RuleContext) -> RuleResult {
 
 /// All pronunciation rules required for Hangul, in the order that they
 /// should be applied.
-const PRONUNCIATION_RULES: [PronunciationRule; 4] = [
+const PRONUNCIATION_RULES: [PronunciationRule; 5] = [
     compound_consonant_rule,
+    ttmik_resyllabification_rule,
     resyllabification_rule,
     reinforcement_rule,
     nasalization_rule,
@@ -439,6 +455,13 @@ mod tests {
         test_pronounce("학생", "학쌩");
         test_pronounce("잡지", "잡찌");
         test_pronounce("먹다", "먹따");
+    }
+
+    #[test]
+    fn test_ttmik_resyllabification_rules_work() {
+        test_pronounce("곧이", "고지");
+        test_pronounce("같이", "가치");
+        test_pronounce("닫히", "다치");
     }
 
     #[test]
