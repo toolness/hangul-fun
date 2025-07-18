@@ -365,10 +365,7 @@ mod tests {
 
     #[test]
     fn test_compound_consonant_rules_work() {
-        assert_eq!(
-            apply_pronunciation_rules_to_jamos("넋을"),
-            "넉쓸".to_owned()
-        );
+        test_pronounce("넋을", "넉쓸");
     }
 
     #[test]
