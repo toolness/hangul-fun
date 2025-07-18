@@ -141,6 +141,9 @@ fn nasalization_rule(ctx: &RuleContext) -> RuleResult {
         (FinalConsonant('ᆨ'), Some(InitialConsonant('ᄆ'))) => {
             RuleResult::ChangeFinal(FinalConsonant('ᆼ'))
         }
+        (FinalConsonant('ᆮ' | 'ᇀ' | 'ᆺ' | 'ᆻ' | 'ᆽ' | 'ᆾ' | 'ᇂ'), Some(InitialConsonant('ᄂ'))) => {
+            RuleResult::ChangeFinal(FinalConsonant('ᆫ'))
+        }
         (FinalConsonant('ᆸ' | 'ᇁ'), Some(InitialConsonant('ᄂ' | 'ᄆ'))) => {
             RuleResult::ChangeFinal(FinalConsonant('ᆷ'))
         }
@@ -395,6 +398,7 @@ mod tests {
     fn test_nasalization_rules_work() {
         test_pronounce("국내", "궁내");
         test_pronounce("국물", "궁물");
+        test_pronounce("듣는", "든는");
         test_pronounce("업는", "엄는");
     }
 
