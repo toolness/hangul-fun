@@ -366,6 +366,10 @@ mod tests {
     #[test]
     fn test_compound_consonant_rules_work() {
         test_pronounce("넋을", "넉쓸");
+        test_pronounce("앉아", "안자");
+        test_pronounce("않고", "안코");
+        test_pronounce("않다", "안타");
+        test_pronounce("않지", "안치");
     }
 
     #[test]
