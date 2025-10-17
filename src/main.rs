@@ -6,11 +6,13 @@ use crate::{
         HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
         hangul_jamo_to_compat_with_fallback,
     },
+    introductions::run_introductions,
     pronunciation::apply_pronunciation_rules_to_jamos,
     romanize::romanize_decomposed_hangul,
 };
 
 mod hangul;
+mod introductions;
 mod jamo_stream;
 mod lrc;
 mod play;
@@ -48,6 +50,8 @@ enum Commands {
         #[arg(long = "lrc")]
         lrc: Option<String>,
     },
+    /// Run the conversation simulator for greetings and introductions.
+    Introductions {},
 }
 
 fn print_char_info(ch: char) {
@@ -108,6 +112,9 @@ fn main() -> Result<()> {
             lrc,
         } => {
             play::play(filename, !no_alt, lrc)?;
+        }
+        Commands::Introductions {} => {
+            run_introductions()?;
         }
     }
     Ok(())
