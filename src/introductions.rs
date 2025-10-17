@@ -107,11 +107,15 @@ impl Conversation {
                 if line == REPEAT_COMMAND {
                     continue;
                 }
-                if line == get_hangul(&b_text) {
+                let expected_line = get_hangul(&b_text);
+                if line == expected_line {
                     println!("CORRECT RESPONSE!");
                 } else {
-                    println!("INCORRECT RESPONSE, EXPECTED: {b_text}");
+                    println!("INCORRECT RESPONSE!");
+                    println!("Expected: {expected_line}");
+                    println!("Received: {line}");
                 }
+                println!("");
             } else {
                 self.b.speak(&b_text)?;
             }
