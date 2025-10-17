@@ -14,7 +14,16 @@ use crate::hangul::{
     decompose_hangul_syllable_to_jamos,
 };
 
-const NAMES: [&str; 6] = ["김재민", "이미자", "임권택", "김대중", "아이유", "강슬기"];
+const NAMES: [&str; 8] = [
+    "김재민",
+    "이미자",
+    "임권택",
+    "김대중",
+    "아이유",
+    "강슬기",
+    "김지수",
+    "손기정",
+];
 
 const COUNTRIES: [&str; 11] = [
     "미국",
@@ -30,7 +39,7 @@ const COUNTRIES: [&str; 11] = [
     "러시아",
 ];
 
-const OCCUPATIONS: [&str; 8] = [
+const OCCUPATIONS: [&str; 11] = [
     "선생님",
     "학생",
     "의사",
@@ -39,6 +48,9 @@ const OCCUPATIONS: [&str; 8] = [
     "기자",
     "회사원",
     "연구원",
+    "경찰",
+    "공무원",
+    "배우",
 ];
 
 const REPEAT_COMMAND: &str = "뭐라고";
