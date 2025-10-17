@@ -107,16 +107,22 @@ struct Conversation {
 
 impl Conversation {
     fn converse(&mut self, a_text: String, b_text: String) -> Result<()> {
-        self.a.speak(&a_text)?;
-        if self.is_interactive {
-            let line = self.rl.readline("> ")?;
-            if line == b_text {
-                println!("CORRECT RESPONSE!");
+        loop {
+            self.a.speak(&a_text)?;
+            if self.is_interactive {
+                let line = self.rl.readline("> ")?;
+                if line.starts_with("뭐라고") {
+                    continue;
+                }
+                if line == b_text {
+                    println!("CORRECT RESPONSE!");
+                } else {
+                    println!("INCORRECT RESPONSE, EXPECTED: {b_text}");
+                }
             } else {
-                println!("INCORRECT RESPONSE, EXPECTED: {b_text}");
+                self.b.speak(&b_text)?;
             }
-        } else {
-            self.b.speak(&b_text)?;
+            break;
         }
         Ok(())
     }
