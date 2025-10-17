@@ -44,6 +44,10 @@ const OCCUPATIONS: [&str; 8] = [
 const REPEAT_COMMAND: &str = "뭐라고";
 const SKIP_COMMAND: &str = "다음";
 
+/// Annoyingly, on MacOS Ctrl-C gets eaten in the run loop so we'll
+/// do this to capture it.
+const AUTO_PROMPT: &str = "Press enter to continue or Ctrl-C to exit.";
+
 trait Speaker {
     fn speak(&mut self, text: &str) -> Result<()>;
 }
@@ -89,11 +93,12 @@ impl Speaker for TtsSpeaker {
 }
 
 fn create_speaker<T: AsRef<str>>(
+    tts: Option<Tts>,
     name: String,
     preferred_voices: &[T],
     rate: Option<f32>,
 ) -> Box<dyn Speaker> {
-    if let Ok(tts) = Tts::default() {
+    if let Some(tts) = tts {
         let features = tts.supported_features();
         if features.is_speaking && features.voice && features.rate {
             if let Ok(voices) = tts.voices() {
@@ -145,6 +150,9 @@ struct Conversation {
 impl Conversation {
     fn converse(&mut self, a_text: String, b_text: String) -> Result<()> {
         loop {
+            if !self.is_interactive {
+                self.rl.readline(AUTO_PROMPT)?;
+            }
             self.a.speak(&a_text)?;
             if self.is_interactive {
                 let line = get_hangul(self.rl.readline("> ")?);
@@ -165,6 +173,7 @@ impl Conversation {
                 }
                 println!("");
             } else {
+                self.rl.readline(AUTO_PROMPT)?;
                 self.b.speak(&b_text)?;
             }
             break;
@@ -231,9 +240,11 @@ fn run_introduction(c: &mut Conversation) -> Result<()> {
     Ok(())
 }
 
-pub fn run_introductions(rate: Option<f32>) -> Result<()> {
+pub fn run_introductions(rate: Option<f32>, is_interactive: bool) -> Result<()> {
+    let tts = Tts::default().ok();
     let mut c = Conversation {
         a: create_speaker(
+            tts.clone(),
             "A".to_owned(),
             &[
                 "com.apple.voice.premium.ko-KR.Yuna",
@@ -245,6 +256,7 @@ pub fn run_introductions(rate: Option<f32>) -> Result<()> {
             rate,
         ),
         b: create_speaker(
+            tts.clone(),
             "B".to_owned(),
             &[
                 "com.apple.voice.enhanced.ko-KR.Minsu",
@@ -255,7 +267,7 @@ pub fn run_introductions(rate: Option<f32>) -> Result<()> {
             rate,
         ),
         rl: rustyline::DefaultEditor::new()?,
-        is_interactive: true,
+        is_interactive,
     };
 
     println!("LET'S HAVE A CONVERSATION.\n");

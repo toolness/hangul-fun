@@ -52,8 +52,13 @@ enum Commands {
     },
     /// Run the conversation simulator for greetings and introductions.
     Introductions {
+        /// Rate of speech.
         #[arg(long = "rate")]
         rate: Option<f32>,
+
+        /// Whether to automate the second speaker instead of prompting the user.
+        #[arg(long = "auto", default_value_t = false)]
+        auto: bool,
     },
 }
 
@@ -116,8 +121,8 @@ fn main() -> Result<()> {
         } => {
             play::play(filename, !no_alt, lrc)?;
         }
-        Commands::Introductions { rate } => {
-            run_introductions(*rate)?;
+        Commands::Introductions { rate, auto } => {
+            run_introductions(*rate, !*auto)?;
         }
     }
     Ok(())
