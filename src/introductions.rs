@@ -5,6 +5,7 @@
 use anyhow::{Result, anyhow};
 use rand::seq::SliceRandom;
 use rand::{Rng, thread_rng};
+use tts::{Tts, Voice};
 
 use crate::hangul::decompose_hangul_syllable_to_jamos;
 
@@ -14,32 +15,127 @@ const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인도"];
 
 const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
 
+trait Speaker {
+    fn speak(&mut self, text: &str) -> Result<()>;
+}
+
+struct StdoutSpeaker {
+    name: String,
+}
+
+impl Speaker for StdoutSpeaker {
+    fn speak(&mut self, text: &str) -> Result<()> {
+        println!("{}: {}", self.name, text);
+        Ok(())
+    }
+}
+
+struct TtsSpeaker {
+    name: String,
+    tts: Tts,
+    voice: Voice,
+}
+
+impl Speaker for TtsSpeaker {
+    fn speak(&mut self, text: &str) -> Result<()> {
+        println!("{}: {}", self.name, text);
+        self.tts.set_voice(&self.voice)?;
+        self.tts.speak(text, true)?;
+        #[cfg(target_os = "macos")]
+        {
+            use objc2_foundation::NSDate;
+            let run_loop = objc2_foundation::NSRunLoop::currentRunLoop();
+            loop {
+                let future = NSDate::dateWithTimeIntervalSinceNow(2.0);
+                run_loop.runUntilDate(&future);
+                if !self.tts.is_speaking()? {
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn create_speaker<T: AsRef<str>>(name: String, preferred_voices: &[T]) -> Box<dyn Speaker> {
+    if let Ok(tts) = Tts::default() {
+        let features = tts.supported_features();
+        if features.is_speaking && features.voice {
+            if let Ok(voices) = tts.voices() {
+                if let Some(voice) = preferred_voices.iter().find_map(|preferred_voice| {
+                    for voice in &voices {
+                        if voice.language() != "ko-KR" {
+                            continue;
+                        }
+                        if preferred_voice.as_ref() == "*" {
+                            return Some(voice.clone());
+                        }
+                        if voice.id() == preferred_voice.as_ref() {
+                            return Some(voice.clone());
+                        }
+                    }
+                    return None;
+                }) {
+                    return Box::new(TtsSpeaker { name, tts, voice });
+                }
+            }
+        }
+    }
+    Box::new(StdoutSpeaker { name })
+}
+
 pub fn run_introductions() -> Result<()> {
     let mut rng = thread_rng();
+    let mut a = create_speaker(
+        "A".to_owned(),
+        &[
+            "com.apple.voice.premium.ko-KR.Yuna",
+            "com.apple.voice.enhanced.ko-KR.Yuna",
+            "com.apple.voice.compact.ko-KR.Yuna",
+            "com.apple.eloquence.ko-KR.Grandma",
+            "*",
+        ],
+    );
+    let mut b = create_speaker(
+        "B".to_owned(),
+        &[
+            "com.apple.voice.enhanced.ko-KR.Minsu",
+            "com.apple.voice.compact.ko-KR.Minsu",
+            "com.apple.eloquence.ko-KR.Grandpa",
+            "*",
+        ],
+    );
+
     let name = *NAMES.choose(&mut rng).unwrap();
     let country = *COUNTRIES.choose(&mut rng).unwrap();
     let occupation = *OCCUPATIONS.choose(&mut rng).unwrap();
 
-    println!("안녕하세요?");
-    println!("안녕하세요? 저는 {name}{}.", get_copula(name)?);
+    a.speak("안녕하세요?")?;
+    b.speak(&format!("안녕하세요? 저는 {name}{}.", get_copula(name)?))?;
 
     let guessed_country = *guess(&COUNTRIES, &country)?;
-    println!("{name} 씨는 {guessed_country} 사람이에요?");
+    a.speak(&format!("{name} 씨는 {guessed_country} 사람이에요?"))?;
     if guessed_country == country {
-        println!("네, 저는 {country} 사람이에요.");
+        b.speak(&format!("네, 저는 {country} 사람이에요."))?;
     } else {
-        println!("아니요, 저는 {country} 사람이에요.");
+        b.speak(&format!("아니요, 저는 {country} 사람이에요."))?;
     }
 
     let guessed_occupation = *guess(&OCCUPATIONS, &occupation)?;
-    println!(
+    a.speak(&format!(
         "{name} 씨는 {guessed_occupation}{}?",
         get_copula(guessed_occupation)?
-    );
+    ))?;
     if guessed_occupation == occupation {
-        println!("네, 저는 {occupation}{}.", get_copula(occupation)?);
+        b.speak(&format!(
+            "네, 저는 {occupation}{}.",
+            get_copula(occupation)?
+        ))?;
     } else {
-        println!("아니요, 저는 {occupation}{}.", get_copula(occupation)?);
+        b.speak(&format!(
+            "아니요, 저는 {occupation}{}.",
+            get_copula(occupation)?
+        ))?;
     }
 
     Ok(())
