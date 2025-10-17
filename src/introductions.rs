@@ -162,7 +162,7 @@ fn get_hangul<T: AsRef<str>>(value: T) -> String {
         .join("")
 }
 
-pub fn run_introductions() -> Result<()> {
+fn run_introduction(c: &mut Conversation) -> Result<()> {
     let mut rng = thread_rng();
 
     let name = *NAMES.choose(&mut rng).unwrap();
@@ -173,30 +173,6 @@ pub fn run_introductions() -> Result<()> {
     println!("Country: {country}");
     println!("Occupation: {occupation}");
     println!("\nTo repeat last line, say '뭐라고'.\n");
-
-    let mut c = Conversation {
-        a: create_speaker(
-            "A".to_owned(),
-            &[
-                "com.apple.voice.premium.ko-KR.Yuna",
-                "com.apple.voice.enhanced.ko-KR.Yuna",
-                "com.apple.voice.compact.ko-KR.Yuna",
-                "com.apple.eloquence.ko-KR.Grandma",
-                "*",
-            ],
-        ),
-        b: create_speaker(
-            "B".to_owned(),
-            &[
-                "com.apple.voice.enhanced.ko-KR.Minsu",
-                "com.apple.voice.compact.ko-KR.Minsu",
-                "com.apple.eloquence.ko-KR.Grandpa",
-                "*",
-            ],
-        ),
-        rl: rustyline::DefaultEditor::new()?,
-        is_interactive: true,
-    };
 
     c.converse(
         "안녕하세요?".into(),
@@ -227,6 +203,37 @@ pub fn run_introductions() -> Result<()> {
     )?;
 
     Ok(())
+}
+
+pub fn run_introductions() -> Result<()> {
+    let mut c = Conversation {
+        a: create_speaker(
+            "A".to_owned(),
+            &[
+                "com.apple.voice.premium.ko-KR.Yuna",
+                "com.apple.voice.enhanced.ko-KR.Yuna",
+                "com.apple.voice.compact.ko-KR.Yuna",
+                "com.apple.eloquence.ko-KR.Grandma",
+                "*",
+            ],
+        ),
+        b: create_speaker(
+            "B".to_owned(),
+            &[
+                "com.apple.voice.enhanced.ko-KR.Minsu",
+                "com.apple.voice.compact.ko-KR.Minsu",
+                "com.apple.eloquence.ko-KR.Grandpa",
+                "*",
+            ],
+        ),
+        rl: rustyline::DefaultEditor::new()?,
+        is_interactive: true,
+    };
+
+    loop {
+        run_introduction(&mut c)?;
+        println!("LET'S DO ANOTHER ROUND.\n");
+    }
 }
 
 fn guess<'a, T: AsRef<str> + PartialEq>(items: &'a [T], correct: &'a T) -> Result<&'a T> {
