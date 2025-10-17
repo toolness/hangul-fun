@@ -39,6 +39,7 @@ struct TtsSpeaker {
 impl Speaker for TtsSpeaker {
     fn speak(&mut self, text: &str) -> Result<()> {
         println!("{}: {}", self.name, text);
+        self.tts.set_rate(self.tts.min_rate())?;
         self.tts.set_voice(&self.voice)?;
         self.tts.speak(text, true)?;
         #[cfg(target_os = "macos")]
@@ -60,7 +61,7 @@ impl Speaker for TtsSpeaker {
 fn create_speaker<T: AsRef<str>>(name: String, preferred_voices: &[T]) -> Box<dyn Speaker> {
     if let Ok(tts) = Tts::default() {
         let features = tts.supported_features();
-        if features.is_speaking && features.voice {
+        if features.is_speaking && features.voice && features.rate {
             if let Ok(voices) = tts.voices() {
                 if let Some(voice) = preferred_voices.iter().find_map(|preferred_voice| {
                     for voice in &voices {
