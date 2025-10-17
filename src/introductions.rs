@@ -3,6 +3,8 @@
 /// Active Korean 1 by the Language Education Institute
 /// of Seoul National University, pg. 42.
 use anyhow::{Result, anyhow};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 use crate::hangul::decompose_hangul_syllable_to_jamos;
 
@@ -13,9 +15,11 @@ const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인두"];
 const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
 
 pub fn run_introductions() -> Result<()> {
-    let name = NAMES[0];
-    let country = COUNTRIES[0];
-    let occupation = OCCUPATIONS[0];
+    let mut rng = thread_rng();
+    let name = NAMES.choose(&mut rng).unwrap();
+    let country = COUNTRIES.choose(&mut rng).unwrap();
+    let occupation = OCCUPATIONS.choose(&mut rng).unwrap();
+
     let name_copula = get_copula(name)?;
     let occupation_copula = get_copula(occupation)?;
     println!("안녕하세요?");
