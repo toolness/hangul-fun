@@ -9,13 +9,15 @@ use rustyline::Editor;
 use rustyline::history::FileHistory;
 use tts::{Tts, Voice};
 
-use crate::hangul::decompose_hangul_syllable_to_jamos;
+use crate::hangul::{HangulCharClass, decompose_hangul_syllable_to_jamos};
 
 const NAMES: [&str; 2] = ["김재민", "이미자"];
 
 const COUNTRIES: [&str; 4] = ["미국", "중국", "일본", "인도"];
 
 const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
+
+const REPEAT_COMMAND: &str = "뭐라고";
 
 trait Speaker {
     fn speak(&mut self, text: &str) -> Result<()>;
@@ -99,11 +101,11 @@ impl Conversation {
         loop {
             self.a.speak(&a_text)?;
             if self.is_interactive {
-                let line = self.rl.readline("> ")?;
-                if line.starts_with("뭐라고") {
+                let line = get_hangul(self.rl.readline("> ")?);
+                if line == REPEAT_COMMAND {
                     continue;
                 }
-                if line == b_text {
+                if line == get_hangul(&b_text) {
                     println!("CORRECT RESPONSE!");
                 } else {
                     println!("INCORRECT RESPONSE, EXPECTED: {b_text}");
@@ -117,6 +119,20 @@ impl Conversation {
     }
 }
 
+fn get_hangul<T: AsRef<str>>(value: T) -> String {
+    HangulCharClass::split(value.as_ref())
+        .into_iter()
+        .map(|(class, str)| {
+            if class == HangulCharClass::Syllables {
+                str
+            } else {
+                ""
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
 pub fn run_introductions() -> Result<()> {
     let mut rng = thread_rng();
 
@@ -126,7 +142,8 @@ pub fn run_introductions() -> Result<()> {
 
     println!("Name: {name}");
     println!("Country: {country}");
-    println!("Occupation: {occupation}\n");
+    println!("Occupation: {occupation}");
+    println!("\nTo repeat last line, say '뭐라고'.\n");
 
     let mut c = Conversation {
         a: create_speaker(
