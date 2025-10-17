@@ -11,7 +11,18 @@ use tts::{Tts, Voice};
 
 use crate::hangul::decompose_hangul_syllable_to_jamos;
 
-const NAMES: [&str; 4] = ["양양", "키샨", "마이클", "크리스"];
+const NAMES: [&str; 10] = [
+    "김민수",
+    "이서연",
+    "박지훈",
+    "최수빈",
+    "정하은",
+    "강민준",
+    "조유진",
+    "윤서준",
+    "장지우",
+    "임서현",
+];
 
 const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인도"];
 
