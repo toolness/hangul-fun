@@ -9,7 +9,9 @@ use rustyline::Editor;
 use rustyline::history::FileHistory;
 use tts::{Tts, Voice};
 
-use crate::hangul::{HangulCharClass, decompose_hangul_syllable_to_jamos};
+use crate::hangul::{
+    HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
+};
 
 const NAMES: [&str; 2] = ["김재민", "이미자"];
 
@@ -120,13 +122,14 @@ impl Conversation {
 }
 
 fn get_hangul<T: AsRef<str>>(value: T) -> String {
-    HangulCharClass::split(value.as_ref())
+    let normalized = decompose_all_hangul_syllables(value.as_ref());
+    HangulCharClass::split(&normalized)
         .into_iter()
         .map(|(class, str)| {
-            if class == HangulCharClass::Syllables {
-                str
-            } else {
+            if class == HangulCharClass::None {
                 ""
+            } else {
+                str
             }
         })
         .collect::<Vec<_>>()
@@ -248,11 +251,16 @@ fn get_copula<T: AsRef<str>>(value: T) -> Result<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use crate::introductions::ends_in_vowel;
+    use crate::introductions::{ends_in_vowel, get_hangul};
 
     #[test]
     fn test_ends_in_vowel() {
         assert_eq!(ends_in_vowel("한").unwrap(), false);
         assert_eq!(ends_in_vowel("네").unwrap(), true);
+    }
+
+    #[test]
+    fn test_get_hangul_works() {
+        assert_eq!(get_hangul("네, 저는 의사예요"), "네저는의사예요");
     }
 }
