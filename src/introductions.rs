@@ -258,6 +258,8 @@ pub fn run_introductions(rate: Option<f32>) -> Result<()> {
         is_interactive: true,
     };
 
+    println!("LET'S HAVE A CONVERSATION.\n");
+
     loop {
         run_introduction(&mut c)?;
         println!("LET'S DO ANOTHER ROUND.\n");
