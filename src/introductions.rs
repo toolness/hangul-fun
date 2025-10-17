@@ -24,7 +24,7 @@ const NAMES: [&str; 10] = [
     "임서현",
 ];
 
-const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인도"];
+const COUNTRIES: [&str; 4] = ["미국", "중국", "일본", "인도"];
 
 const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
 
