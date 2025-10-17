@@ -14,7 +14,7 @@ use crate::hangul::{
     decompose_hangul_syllable_to_jamos,
 };
 
-const NAMES: [&str; 2] = ["김재민", "이미자"];
+const NAMES: [&str; 6] = ["김재민", "이미자", "임권택", "김대중", "아이유", "강슬기"];
 
 const COUNTRIES: [&str; 11] = [
     "미국",
