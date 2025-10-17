@@ -51,7 +51,10 @@ enum Commands {
         lrc: Option<String>,
     },
     /// Run the conversation simulator for greetings and introductions.
-    Introductions {},
+    Introductions {
+        #[arg(long = "rate")]
+        rate: Option<f32>,
+    },
 }
 
 fn print_char_info(ch: char) {
@@ -113,8 +116,8 @@ fn main() -> Result<()> {
         } => {
             play::play(filename, !no_alt, lrc)?;
         }
-        Commands::Introductions {} => {
-            run_introductions()?;
+        Commands::Introductions { rate } => {
+            run_introductions(*rate)?;
         }
     }
     Ok(())

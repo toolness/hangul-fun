@@ -63,12 +63,13 @@ struct TtsSpeaker {
     name: String,
     tts: Tts,
     voice: Voice,
+    rate: f32,
 }
 
 impl Speaker for TtsSpeaker {
     fn speak(&mut self, text: &str) -> Result<()> {
         println!("{}: {}", self.name, text);
-        self.tts.set_rate(self.tts.min_rate())?;
+        self.tts.set_rate(self.rate)?;
         self.tts.set_voice(&self.voice)?;
         self.tts.speak(text, true)?;
         #[cfg(target_os = "macos")]
@@ -87,7 +88,11 @@ impl Speaker for TtsSpeaker {
     }
 }
 
-fn create_speaker<T: AsRef<str>>(name: String, preferred_voices: &[T]) -> Box<dyn Speaker> {
+fn create_speaker<T: AsRef<str>>(
+    name: String,
+    preferred_voices: &[T],
+    rate: Option<f32>,
+) -> Box<dyn Speaker> {
     if let Ok(tts) = Tts::default() {
         let features = tts.supported_features();
         if features.is_speaking && features.voice && features.rate {
@@ -106,7 +111,23 @@ fn create_speaker<T: AsRef<str>>(name: String, preferred_voices: &[T]) -> Box<dy
                     }
                     return None;
                 }) {
-                    return Box::new(TtsSpeaker { name, tts, voice });
+                    let mut rate = rate.unwrap_or(tts.min_rate());
+                    if rate < tts.min_rate() {
+                        rate = tts.min_rate();
+                    } else if rate > tts.max_rate() {
+                        rate = tts.max_rate();
+                    }
+                    println!(
+                        "Initializing TTS voice '{}' at rate {}.",
+                        voice.name(),
+                        rate
+                    );
+                    return Box::new(TtsSpeaker {
+                        name,
+                        tts,
+                        voice,
+                        rate,
+                    });
                 }
             }
         }
@@ -210,7 +231,7 @@ fn run_introduction(c: &mut Conversation) -> Result<()> {
     Ok(())
 }
 
-pub fn run_introductions() -> Result<()> {
+pub fn run_introductions(rate: Option<f32>) -> Result<()> {
     let mut c = Conversation {
         a: create_speaker(
             "A".to_owned(),
@@ -221,6 +242,7 @@ pub fn run_introductions() -> Result<()> {
                 "com.apple.eloquence.ko-KR.Grandma",
                 "*",
             ],
+            rate,
         ),
         b: create_speaker(
             "B".to_owned(),
@@ -230,6 +252,7 @@ pub fn run_introductions() -> Result<()> {
                 "com.apple.eloquence.ko-KR.Grandpa",
                 "*",
             ],
+            rate,
         ),
         rl: rustyline::DefaultEditor::new()?,
         is_interactive: true,
