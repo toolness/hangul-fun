@@ -10,7 +10,7 @@ use crate::hangul::decompose_hangul_syllable_to_jamos;
 
 const NAMES: [&str; 4] = ["양양", "키샨", "마이클", "크리스"];
 
-const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인두"];
+const COUNTRIES: [&str; 4] = ["미국", "중국", "일분", "인도"];
 
 const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
 
