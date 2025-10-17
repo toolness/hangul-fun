@@ -42,6 +42,7 @@ const OCCUPATIONS: [&str; 8] = [
 ];
 
 const REPEAT_COMMAND: &str = "뭐라고";
+const SKIP_COMMAND: &str = "다음";
 
 trait Speaker {
     fn speak(&mut self, text: &str) -> Result<()>;
@@ -128,6 +129,8 @@ impl Conversation {
                 let line = get_hangul(self.rl.readline("> ")?);
                 if line == REPEAT_COMMAND {
                     continue;
+                } else if line == SKIP_COMMAND {
+                    break;
                 }
                 let expected_line = get_hangul(&b_text);
                 if line == expected_line {
@@ -136,6 +139,8 @@ impl Conversation {
                     println!("INCORRECT RESPONSE!");
                     println!("Expected: {expected_line}");
                     println!("Received: {line}");
+                    self.a.speak(REPEAT_COMMAND)?;
+                    continue;
                 }
                 println!("");
             } else {
