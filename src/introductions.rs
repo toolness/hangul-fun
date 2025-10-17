@@ -15,9 +15,30 @@ use crate::hangul::{
 
 const NAMES: [&str; 2] = ["김재민", "이미자"];
 
-const COUNTRIES: [&str; 4] = ["미국", "중국", "일본", "인도"];
+const COUNTRIES: [&str; 11] = [
+    "미국",
+    "중국",
+    "일본",
+    "인도",
+    "호주",
+    "영국",
+    "독일",
+    "프랑스",
+    "캐나다",
+    "한국",
+    "러시아",
+];
 
-const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
+const OCCUPATIONS: [&str; 8] = [
+    "선생님",
+    "학생",
+    "의사",
+    "요리사",
+    "은행원",
+    "기자",
+    "회사원",
+    "연구원",
+];
 
 const REPEAT_COMMAND: &str = "뭐라고";
 
