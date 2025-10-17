@@ -10,7 +10,8 @@ use rustyline::history::FileHistory;
 use tts::{Tts, Voice};
 
 use crate::hangul::{
-    HangulCharClass, decompose_all_hangul_syllables, decompose_hangul_syllable_to_jamos,
+    HangulCharClass, compose_all_hangul_jamos, decompose_all_hangul_syllables,
+    decompose_hangul_syllable_to_jamos,
 };
 
 const NAMES: [&str; 2] = ["김재민", "이미자"];
@@ -147,7 +148,7 @@ impl Conversation {
 }
 
 fn get_hangul<T: AsRef<str>>(value: T) -> String {
-    let normalized = decompose_all_hangul_syllables(value.as_ref());
+    let normalized = compose_all_hangul_jamos(decompose_all_hangul_syllables(value.as_ref()));
     HangulCharClass::split(&normalized)
         .into_iter()
         .map(|(class, str)| {
@@ -286,6 +287,6 @@ mod tests {
 
     #[test]
     fn test_get_hangul_works() {
-        assert_eq!(get_hangul("네, 저는 의사예요"), "네저는의사예요");
+        assert_eq!(get_hangul("네, 저는 의사예요"), "네저는의사예요");
     }
 }
