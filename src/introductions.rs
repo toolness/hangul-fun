@@ -4,7 +4,7 @@
 /// of Seoul National University, pg. 42.
 use anyhow::{Result, anyhow};
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::{Rng, thread_rng};
 
 use crate::hangul::decompose_hangul_syllable_to_jamos;
 
@@ -16,19 +16,47 @@ const OCCUPATIONS: [&str; 4] = ["선생님", "학생", "의사", "요리사"];
 
 pub fn run_introductions() -> Result<()> {
     let mut rng = thread_rng();
-    let name = NAMES.choose(&mut rng).unwrap();
-    let country = COUNTRIES.choose(&mut rng).unwrap();
-    let occupation = OCCUPATIONS.choose(&mut rng).unwrap();
+    let name = *NAMES.choose(&mut rng).unwrap();
+    let country = *COUNTRIES.choose(&mut rng).unwrap();
+    let occupation = *OCCUPATIONS.choose(&mut rng).unwrap();
+    let guess_country_correctly = rng.gen_bool(0.5);
+    let guessed_country = if guess_country_correctly {
+        country
+    } else {
+        guess_other(&COUNTRIES, &country)?
+    };
 
     let name_copula = get_copula(name)?;
     let occupation_copula = get_copula(occupation)?;
     println!("안녕하세요?");
     println!("안녕하세요? 저는 {name}{name_copula}.");
-    println!("{name} 씨는 {country} 사람이에요?");
-    println!("네, 저는 {country} 사람이에요.");
+    println!("{name} 씨는 {guessed_country} 사람이에요?");
+    if guessed_country == country {
+        println!("네, 저는 {country} 사람이에요.");
+    } else {
+        println!("아니요, 저는 {country} 사람이에요.");
+    }
+
     println!("{name} 씨는 {occupation}{occupation_copula}?");
     println!("네, 저는 {occupation}{occupation_copula}.");
     Ok(())
+}
+
+fn guess_other<'a, T: AsRef<str> + PartialEq>(items: &'a [T], except: &T) -> Result<&'a T> {
+    let mut rng = thread_rng();
+    let mut i = 0;
+    loop {
+        let Some(choice) = items.choose(&mut rng) else {
+            return Err(anyhow!("items is empty"));
+        };
+        if choice != except {
+            return Ok(choice);
+        }
+        i += 1;
+        if i > 5000 {
+            return Err(anyhow!("exceeded maximum attempts"));
+        }
+    }
 }
 
 fn ends_in_vowel<T: AsRef<str>>(value: T) -> Result<bool> {
