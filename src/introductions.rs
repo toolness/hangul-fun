@@ -19,17 +19,11 @@ pub fn run_introductions() -> Result<()> {
     let name = *NAMES.choose(&mut rng).unwrap();
     let country = *COUNTRIES.choose(&mut rng).unwrap();
     let occupation = *OCCUPATIONS.choose(&mut rng).unwrap();
-    let guess_country_correctly = rng.gen_bool(0.5);
-    let guessed_country = if guess_country_correctly {
-        country
-    } else {
-        guess_other(&COUNTRIES, &country)?
-    };
 
-    let name_copula = get_copula(name)?;
-    let occupation_copula = get_copula(occupation)?;
     println!("안녕하세요?");
-    println!("안녕하세요? 저는 {name}{name_copula}.");
+    println!("안녕하세요? 저는 {name}{}.", get_copula(name)?);
+
+    let guessed_country = *guess(&COUNTRIES, &country)?;
     println!("{name} 씨는 {guessed_country} 사람이에요?");
     if guessed_country == country {
         println!("네, 저는 {country} 사람이에요.");
@@ -37,9 +31,28 @@ pub fn run_introductions() -> Result<()> {
         println!("아니요, 저는 {country} 사람이에요.");
     }
 
-    println!("{name} 씨는 {occupation}{occupation_copula}?");
-    println!("네, 저는 {occupation}{occupation_copula}.");
+    let guessed_occupation = *guess(&OCCUPATIONS, &occupation)?;
+    println!(
+        "{name} 씨는 {guessed_occupation}{}?",
+        get_copula(guessed_occupation)?
+    );
+    if guessed_occupation == occupation {
+        println!("네, 저는 {occupation}{}.", get_copula(occupation)?);
+    } else {
+        println!("아니요, 저는 {occupation}{}.", get_copula(occupation)?);
+    }
+
     Ok(())
+}
+
+fn guess<'a, T: AsRef<str> + PartialEq>(items: &'a [T], correct: &'a T) -> Result<&'a T> {
+    let mut rng = thread_rng();
+    let guess_correctly = rng.gen_bool(0.5);
+    if guess_correctly {
+        Ok(correct)
+    } else {
+        guess_other(items, correct)
+    }
 }
 
 fn guess_other<'a, T: AsRef<str> + PartialEq>(items: &'a [T], except: &T) -> Result<&'a T> {
