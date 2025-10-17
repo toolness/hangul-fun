@@ -5,6 +5,8 @@
 use anyhow::{Result, anyhow};
 use rand::seq::SliceRandom;
 use rand::{Rng, thread_rng};
+use rustyline::Editor;
+use rustyline::history::FileHistory;
 use tts::{Tts, Voice};
 
 use crate::hangul::decompose_hangul_syllable_to_jamos;
@@ -85,59 +87,92 @@ fn create_speaker<T: AsRef<str>>(name: String, preferred_voices: &[T]) -> Box<dy
     Box::new(StdoutSpeaker { name })
 }
 
+struct Conversation {
+    is_interactive: bool,
+    rl: Editor<(), FileHistory>,
+    a: Box<dyn Speaker>,
+    b: Box<dyn Speaker>,
+}
+
+impl Conversation {
+    fn converse(&mut self, a_text: String, b_text: String) -> Result<()> {
+        self.a.speak(&a_text)?;
+        if self.is_interactive {
+            let line = self.rl.readline("> ")?;
+            if line == b_text {
+                println!("CORRECT RESPONSE!");
+            } else {
+                println!("INCORRECT RESPONSE, EXPECTED: {b_text}");
+            }
+        } else {
+            self.b.speak(&b_text)?;
+        }
+        Ok(())
+    }
+}
+
 pub fn run_introductions() -> Result<()> {
     let mut rng = thread_rng();
-    let mut a = create_speaker(
-        "A".to_owned(),
-        &[
-            "com.apple.voice.premium.ko-KR.Yuna",
-            "com.apple.voice.enhanced.ko-KR.Yuna",
-            "com.apple.voice.compact.ko-KR.Yuna",
-            "com.apple.eloquence.ko-KR.Grandma",
-            "*",
-        ],
-    );
-    let mut b = create_speaker(
-        "B".to_owned(),
-        &[
-            "com.apple.voice.enhanced.ko-KR.Minsu",
-            "com.apple.voice.compact.ko-KR.Minsu",
-            "com.apple.eloquence.ko-KR.Grandpa",
-            "*",
-        ],
-    );
 
     let name = *NAMES.choose(&mut rng).unwrap();
     let country = *COUNTRIES.choose(&mut rng).unwrap();
     let occupation = *OCCUPATIONS.choose(&mut rng).unwrap();
 
-    a.speak("안녕하세요?")?;
-    b.speak(&format!("안녕하세요? 저는 {name}{}.", get_copula(name)?))?;
+    println!("Name: {name}");
+    println!("Country: {country}");
+    println!("Occupation: {occupation}\n");
+
+    let mut c = Conversation {
+        a: create_speaker(
+            "A".to_owned(),
+            &[
+                "com.apple.voice.premium.ko-KR.Yuna",
+                "com.apple.voice.enhanced.ko-KR.Yuna",
+                "com.apple.voice.compact.ko-KR.Yuna",
+                "com.apple.eloquence.ko-KR.Grandma",
+                "*",
+            ],
+        ),
+        b: create_speaker(
+            "B".to_owned(),
+            &[
+                "com.apple.voice.enhanced.ko-KR.Minsu",
+                "com.apple.voice.compact.ko-KR.Minsu",
+                "com.apple.eloquence.ko-KR.Grandpa",
+                "*",
+            ],
+        ),
+        rl: rustyline::DefaultEditor::new()?,
+        is_interactive: true,
+    };
+
+    c.converse(
+        "안녕하세요?".into(),
+        format!("안녕하세요? 저는 {name}{}.", get_copula(name)?),
+    )?;
 
     let guessed_country = *guess(&COUNTRIES, &country)?;
-    a.speak(&format!("{name} 씨는 {guessed_country} 사람이에요?"))?;
-    if guessed_country == country {
-        b.speak(&format!("네, 저는 {country} 사람이에요."))?;
-    } else {
-        b.speak(&format!("아니요, 저는 {country} 사람이에요."))?;
-    }
+    c.converse(
+        format!("{name} 씨는 {guessed_country} 사람이에요?"),
+        if guessed_country == country {
+            format!("네, 저는 {country} 사람이에요.")
+        } else {
+            format!("아니요, 저는 {country} 사람이에요.")
+        },
+    )?;
 
     let guessed_occupation = *guess(&OCCUPATIONS, &occupation)?;
-    a.speak(&format!(
-        "{name} 씨는 {guessed_occupation}{}?",
-        get_copula(guessed_occupation)?
-    ))?;
-    if guessed_occupation == occupation {
-        b.speak(&format!(
-            "네, 저는 {occupation}{}.",
-            get_copula(occupation)?
-        ))?;
-    } else {
-        b.speak(&format!(
-            "아니요, 저는 {occupation}{}.",
-            get_copula(occupation)?
-        ))?;
-    }
+    c.converse(
+        format!(
+            "{name} 씨는 {guessed_occupation}{}?",
+            get_copula(guessed_occupation)?
+        ),
+        if guessed_occupation == occupation {
+            format!("네, 저는 {occupation}{}.", get_copula(occupation)?)
+        } else {
+            format!("아니요, 저는 {occupation}{}.", get_copula(occupation)?)
+        },
+    )?;
 
     Ok(())
 }
