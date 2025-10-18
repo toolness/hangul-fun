@@ -53,6 +53,8 @@ const OCCUPATIONS: [&str; 11] = [
     "배우",
 ];
 
+const CONGRATS: [&str; 5] = ["잘했어요!", "멋있다!", "잘하네요!", "좋아요!", "굉장해요!"];
+
 const REPEAT_COMMAND: &str = "뭐라고";
 const SKIP_COMMAND: &str = "다음";
 
@@ -248,6 +250,10 @@ fn run_introduction(c: &mut Conversation) -> Result<()> {
             format!("아니요, 저는 {occupation}{}.", get_copula(occupation)?)
         },
     )?;
+
+    if c.is_interactive {
+        c.a.speak(CONGRATS.choose(&mut rng).unwrap())?;
+    }
 
     Ok(())
 }
