@@ -179,9 +179,11 @@ impl Conversation {
                 if line == expected_line {
                     println!("CORRECT RESPONSE!");
                 } else {
+                    let diff = get_hangul_diff(&expected_line, &line);
                     println!("INCORRECT RESPONSE!");
                     println!("Expected: {expected_line}");
                     println!("Received: {line}");
+                    println!("          {diff}");
                     self.a.speak(REPEAT_COMMAND)?;
                     continue;
                 }
@@ -194,6 +196,24 @@ impl Conversation {
         }
         Ok(())
     }
+}
+
+/// Return a diff of the two hangul strings, with carets for
+/// every mismatched character.
+fn get_hangul_diff(a: &str, b: &str) -> String {
+    let mut result = String::with_capacity(a.len());
+
+    for (a, b) in a.chars().zip(b.chars()) {
+        if a == b {
+            // Add a full-width space, since this is meant to show up below Hangul characters.
+            result.push('　');
+        } else {
+            // Show a full-width caret to point at the whole full-width character above it.
+            result.push('＾');
+        }
+    }
+
+    result
 }
 
 fn get_hangul<T: AsRef<str>>(value: T) -> String {
