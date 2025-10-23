@@ -15,7 +15,7 @@ use crate::hangul::{
 };
 
 const NAMES: [&str; 8] = [
-    "김재민",
+    "박지민",
     "이미자",
     "임권택",
     "김대중",
