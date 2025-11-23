@@ -555,7 +555,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "cpal",
  "crossterm",
+ "hound",
  "nom 8.0.0",
  "objc2-foundation",
  "rand",

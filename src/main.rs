@@ -8,6 +8,7 @@ use crate::{
     },
     introductions::run_introductions,
     pronunciation::apply_pronunciation_rules_to_jamos,
+    record::run_record,
     romanize::romanize_decomposed_hangul,
 };
 
@@ -17,6 +18,7 @@ mod jamo_stream;
 mod lrc;
 mod play;
 mod pronunciation;
+mod record;
 mod romanize;
 
 #[derive(Parser)]
@@ -60,6 +62,8 @@ enum Commands {
         #[arg(long = "auto", default_value_t = false)]
         auto: bool,
     },
+    /// Record audio.
+    Record {},
 }
 
 fn print_char_info(ch: char) {
@@ -123,6 +127,9 @@ fn main() -> Result<()> {
         }
         Commands::Introductions { rate, auto } => {
             run_introductions(*rate, !*auto)?;
+        }
+        Commands::Record {} => {
+            run_record()?;
         }
     }
     Ok(())
