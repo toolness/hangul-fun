@@ -11,6 +11,9 @@ pub fn run_record() -> Result<()> {
     let Some(device) = host.default_input_device() else {
         return Err(anyhow!("Unable to query default audio input device"));
     };
+    if let Ok(name) = device.name() {
+        println!("Using device {name:?}.");
+    }
     let Ok(supported_configs_range) = device.supported_input_configs() else {
         return Err(anyhow!("Unable to query audio input configs"));
     };
