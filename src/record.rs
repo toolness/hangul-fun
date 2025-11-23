@@ -11,9 +11,11 @@ pub fn run_record() -> Result<()> {
     let Some(device) = host.default_input_device() else {
         return Err(anyhow!("Unable to query default audio input device"));
     };
-    let Ok(mut supported_configs_range) = device.supported_input_configs() else {
+    let Ok(supported_configs_range) = device.supported_input_configs() else {
         return Err(anyhow!("Unable to query audio input configs"));
     };
+    let mut supported_configs_range =
+        supported_configs_range.filter(|range| range.sample_format() == cpal::SampleFormat::F32);
     let Some(config) = supported_configs_range
         .next()
         .map(|range| range.with_max_sample_rate())
