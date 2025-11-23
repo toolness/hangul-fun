@@ -35,6 +35,7 @@ pub fn run_record() -> Result<()> {
             hound::SampleFormat::Int
         },
     };
+    println!("Using stream config: {:?}", config);
     const OUTFILE: &'static str = "recording.wav";
     let writer = hound::WavWriter::create(OUTFILE, spec)?;
     let writer = Arc::new(Mutex::new(Some(writer)));
