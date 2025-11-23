@@ -45,6 +45,7 @@ pub fn run_record() -> Result<()> {
     let stream = match config.sample_format() {
         cpal::SampleFormat::F32 => device.build_input_stream(
             &config.into(),
+            // Note that this doesn't seem to get called on Windows, unfortunately: https://github.com/RustAudio/cpal/issues/516
             move |data: &[f32], _: &_| {
                 if let Ok(mut guard) = stream_writer.try_lock() {
                     if let Some(writer) = guard.as_mut() {
